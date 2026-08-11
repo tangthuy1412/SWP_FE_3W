@@ -1,0 +1,17 @@
+.Toastify__toast {
+  background: #ffffff;
+  color: #1b1c1c;
+  border: 3px solid #8e7164;
+  border-radius: 0.75rem;
+  box-shadow: 0 12px 28px rgba(27, 28, 28, 0.16);
+}
+
+.Toastify__toast--success { border-color: #2e7d32; }
+.Toastify__toast--error { border-color: #ba1a1a; }
+.Toastify__toast--warning { border-color: #d97706; }
+.Toastify__toast--info { border-color: #1976d2; }
+
+.Toastify__progress-bar--success { background: #2e7d32; }
+.Toastify__progress-bar--error { background: #ba1a1a; }
+.Toastify__progress-bar--warning { background: #d97706; }
+.Toastify__progress-bar--info { background: #1976d2; }
