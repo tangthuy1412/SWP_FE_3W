@@ -1,0 +1,289 @@
+@import "tailwindcss";
+
+/* Enable class-based dark mode (toggled on <html> by src/lib/themeHelpers.ts)
+   instead of Tailwind v4's default prefers-color-scheme-only dark variant,
+   so LIGHT/DARK/SYSTEM can be explicitly chosen in Settings. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Colors */
+  --color-primary: #27362c;
+  --color-primary-fixed: #dcefc8;
+  --color-primary-fixed-dim: #b9d99b;
+  --color-on-primary: #FFFFFF;
+  --color-on-primary-container: #203124;
+  --color-primary-container: #dcefc8;
+  
+  --color-secondary: #5f5e5e;
+  --color-on-secondary-container: #636262;
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-tertiary-container: #dd8245;
+  --color-surface: #ffffff;
+  --color-on-tertiary-fixed: #321300;
+  --color-secondary-fixed-dim: #c8c6c5;
+  --color-inverse-primary: #ffb693;
+  --color-on-background: #252824;
+  --color-on-surface: #252824;
+  --color-surface-dim: #dbdad9;
+  --color-surface-container-highest: #e4e2e2;
+  --color-surface-variant: #e4e2e2;
+  --color-on-secondary-fixed-variant: #474746;
+  --color-secondary-container: #e2dfde;
+  --color-secondary-fixed: #e5e2e1;
+  --color-on-tertiary-fixed-variant: #743500;
+  --color-inverse-on-surface: #f2f0f0;
+  --color-on-primary-fixed: #351000;
+  --color-background: #f7f8f5;
+  --color-on-primary-fixed-variant: #7a3000;
+  --color-surface-bright: #fbf9f8;
+  --color-on-secondary-fixed: #1c1b1b;
+  --color-inverse-surface: #303031;
+  --color-on-error: #ffffff;
+  --color-surface-tint: #6f8f72;
+  --color-outline: #8e7164;
+  --color-tertiary-fixed: #ffdbc8;
+  --color-on-tertiary: #ffffff;
+  --color-surface-container-low: #f3f5f0;
+  --color-on-secondary: #ffffff;
+  --color-tertiary-fixed-dim: #ffb68a;
+  --color-surface-container-high: #e9eee5;
+  --color-tertiary: #d47a3c;
+  --color-surface-container-lowest: #ffffff;
+  --color-on-error-container: #93000a;
+  --color-surface-container: #eef1eb;
+  --color-outline-variant: #dfe5db;
+  --color-on-surface-variant: #687067;
+  --color-on-tertiary-container: #532400;
+
+  /* Custom Spacing */
+  --spacing-stack-lg: 24px;
+  --spacing-ai-panel-width: 360px;
+  --spacing-unit: 8px;
+  --spacing-sidebar-width: 232px;
+  --spacing-topbar-height: 76px;
+  --spacing-gutter: 16px;
+  --spacing-container-padding: 24px;
+  --spacing-stack-sm: 4px;
+  --spacing-stack-md: 12px;
+
+  /* Custom Border Radius */
+  --radius-DEFAULT: 0.25rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+}
+
+html { background: var(--color-background); }
+body { margin: 0; min-width: 320px; color: var(--color-on-background); -webkit-font-smoothing: antialiased; }
+button, input, textarea, select { font: inherit; }
+::selection { background: #dcefc8; color: #203124; }
+
+/* Dark theme color tokens - same semantic roles as @theme above, MD3-style dark
+   mapping (dark surfaces, light on-surface text, brightened brand accent). */
+.dark {
+  --color-primary: #b9d99b;
+  --color-primary-fixed: #324938;
+  --color-primary-fixed-dim: #9fbd87;
+  --color-on-primary: #18251b;
+  --color-on-primary-container: #dcefc8;
+  --color-primary-container: #3d5743;
+
+  --color-secondary: #c8c6c5;
+  --color-on-secondary-container: #e2dfde;
+  --color-error: #ffb4ab;
+  --color-error-container: #93000a;
+  --color-tertiary-container: #5c2e00;
+  --color-surface: #131313;
+  --color-on-tertiary-fixed: #ffdbc8;
+  --color-secondary-fixed-dim: #c8c6c5;
+  --color-inverse-primary: #526f58;
+  --color-on-background: #e4e2e2;
+  --color-on-surface: #e4e2e2;
+  --color-surface-dim: #131313;
+  --color-surface-container-highest: #38393a;
+  --color-surface-variant: #4a4540;
+  --color-on-secondary-fixed-variant: #c8c6c5;
+  --color-secondary-container: #474746;
+  --color-secondary-fixed: #474746;
+  --color-on-tertiary-fixed-variant: #ffb68a;
+  --color-inverse-on-surface: #1b1c1c;
+  --color-on-primary-fixed: #e9f5df;
+  --color-background: #131313;
+  --color-on-primary-fixed-variant: #b9d99b;
+  --color-surface-bright: #3a3a3a;
+  --color-on-secondary-fixed: #e5e2e1;
+  --color-inverse-surface: #e4e2e2;
+  --color-on-error: #690005;
+  --color-surface-tint: #b9d99b;
+  --color-outline: #a98d80;
+  --color-tertiary-fixed: #ffdbc8;
+  --color-on-tertiary: #5c2400;
+  --color-surface-container-low: #1e1f1f;
+  --color-on-secondary: #333233;
+  --color-tertiary-fixed-dim: #ffb68a;
+  --color-surface-container-high: #292a2a;
+  --color-tertiary: #f0b27d;
+  --color-surface-container-lowest: #0d0d0d;
+  --color-on-error-container: #ffdad6;
+  --color-surface-container: #232424;
+  --color-outline-variant: #4a3830;
+  --color-on-surface-variant: #d6c2b5;
+  --color-on-tertiary-container: #ffdbc8;
+}
+
+/* Custom Scrollbar for a cleaner look */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #e4e2e2;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #c8c6c5;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #4a4540;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #5a5450;
+}
+
+/* Glassmorphism card utility */
+.glass-card {
+  background: rgba(251, 249, 248, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Material Symbols Fill State */
+.icon-fill {
+  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+/* Typography Utilities matching DESIGN.md */
+@utility font-display-lg {
+  font-family: 'Inter', sans-serif;
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 56px;
+  letter-spacing: -0.02em;
+}
+
+@utility font-headline-lg {
+  font-family: 'Inter', sans-serif;
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 40px;
+  letter-spacing: -0.01em;
+}
+
+@utility font-headline-lg-mobile {
+  font-family: 'Inter', sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
+}
+
+@utility font-headline-md {
+  font-family: 'Inter', sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
+}
+
+@utility font-title-lg {
+  font-family: 'Inter', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+@utility font-body-lg {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+}
+
+@utility font-body-md {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+@utility font-label-md {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+@utility font-mono-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+}
+
+/* AI Markdown styling */
+.markdown-content p {
+  margin-bottom: 0.75rem;
+}
+.markdown-content p:last-child {
+  margin-bottom: 0;
+}
+.markdown-content ul, .markdown-content ol {
+  margin-bottom: 0.75rem;
+  padding-left: 1.25rem;
+  list-style-position: outside;
+}
+.markdown-content ul {
+  list-style-type: disc;
+}
+.markdown-content ol {
+  list-style-type: decimal;
+}
+.markdown-content li {
+  margin-bottom: 0.25rem;
+}
+.markdown-content strong {
+  font-weight: 700;
+}
+.markdown-content code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875em;
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+}
+.markdown-content pre {
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin-bottom: 0.75rem;
+}
+.markdown-content pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  color: inherit;
+  font-size: 0.875rem;
+}
+.markdown-content h1, .markdown-content h2, .markdown-content h3 {
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+.markdown-content h1 { font-size: 1.25rem; }
+.markdown-content h2 { font-size: 1.125rem; }
+.markdown-content h3 { font-size: 1rem; }
+
