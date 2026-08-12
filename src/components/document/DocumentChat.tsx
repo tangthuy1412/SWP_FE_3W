@@ -573,7 +573,7 @@ export const DocumentChat: React.FC<DocumentChatProps> = ({
                 <div
                   className={`p-4 shadow-sm text-on-surface font-body-md text-body-md markdown-content ${
                     isAi
-                      ? "bg-white border rounded-2xl rounded-tl-sm border-outline-variant/60 bg-white/95 text-left"
+                      ? "bg-white border rounded-2xl rounded-tl-sm border-outline-variant/60 text-[#202522] text-left"
                       : "bg-surface-container-high rounded-2xl rounded-tr-sm whitespace-pre-line text-left"
                   }`}
                 >
@@ -644,7 +644,7 @@ export const DocumentChat: React.FC<DocumentChatProps> = ({
               <span className="font-label-md text-label-md text-secondary ml-1 select-none">
                 Aether AI
               </span>
-              <div className="bg-white border rounded-2xl rounded-tl-sm border-outline-variant/40 p-4 shadow-sm flex items-center gap-1">
+              <div className="bg-white text-[#202522] border rounded-2xl rounded-tl-sm border-outline-variant/40 p-4 shadow-sm flex items-center gap-1">
                 <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce delay-75" />
                 <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce delay-150" />
                 <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce delay-300" />

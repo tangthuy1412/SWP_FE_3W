@@ -480,7 +480,7 @@ export const SmartChatView: React.FC = () => {
                   <div 
                     className={`p-4 shadow-sm text-on-surface font-body-md text-body-md markdown-content leading-relaxed ${
                       isAi
-                        ? 'bg-white border rounded-2xl rounded-tl-sm border-outline-variant/60 bg-white/95 text-left'
+                        ? 'bg-white border rounded-2xl rounded-tl-sm border-outline-variant/60 text-[#202522] text-left'
                         : 'bg-surface-container-high rounded-2xl rounded-tr-sm whitespace-pre-line text-left'
                     }`}
                   >
@@ -518,7 +518,7 @@ export const SmartChatView: React.FC = () => {
               </div>
               <div className="flex flex-col gap-1 items-start">
                 <span className="font-label-md text-label-md text-secondary ml-1 select-none">Aether AI</span>
-                <div className="bg-white border rounded-2xl rounded-tl-sm border-outline-variant/40 p-4 shadow-sm flex items-center gap-1">
+                <div className="bg-white text-[#202522] border rounded-2xl rounded-tl-sm border-outline-variant/40 p-4 shadow-sm flex items-center gap-1">
                   <span className="w-2.5 h-2.5 bg-primary/60 rounded-full animate-bounce delay-75" />
                   <span className="w-2.5 h-2.5 bg-primary/60 rounded-full animate-bounce delay-150" />
                   <span className="w-2.5 h-2.5 bg-primary/60 rounded-full animate-bounce delay-300" />

@@ -4,7 +4,7 @@ import { userService } from '../../services/userService';
 import type { Theme, UpdateUserSettingsRequest, UserSettingsResponse, Visibility } from '../../services/userService';
 import { applyTheme } from '../../lib/themeHelpers';
 
-const THEME_OPTIONS: Theme[] = ['LIGHT', 'DARK', 'SYSTEM'];
+const THEME_OPTIONS: Theme[] = ['LIGHT'];
 const VISIBILITY_OPTIONS: Visibility[] = ['PUBLIC', 'FRIENDS_ONLY', 'PRIVATE'];
 
 interface ToggleRowProps {
@@ -53,8 +53,8 @@ export const SettingsView: React.FC = () => {
     setLoadError(null);
     const response = await userService.getMySettings();
     if (response.data && response.data.success) {
-      setSettings(response.data.data);
-      applyTheme(response.data.data.theme);
+      setSettings({ ...response.data.data, theme: 'LIGHT' });
+      applyTheme('LIGHT');
     } else {
       setLoadError(response.error || 'Server error');
     }
@@ -158,6 +158,7 @@ export const SettingsView: React.FC = () => {
               </option>
             ))}
           </select>
+          <p className="text-xs leading-5 text-secondary">Light mode is optimized for consistent contrast and document readability.</p>
         </div>
       </div>
 
