@@ -90,12 +90,12 @@ export const documentService = {
     // Gửi multipart data lên backend; server validate entitlement, lưu file và bắt đầu ingestion.
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("isPublic", String(isPublic));
+    const query = new URLSearchParams({ isPublic: String(isPublic) });
     if (folderId !== null) {
-      formData.append("folderId", String(folderId));
+      query.set("folderId", String(folderId));
     }
     return apiClient.post<BackendResponse<DocumentUploadResponse>>(
-      "/documents/upload",
+      `/documents/upload?${query.toString()}`,
       formData,
     );
   },
