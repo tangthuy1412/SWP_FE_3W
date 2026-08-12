@@ -5,6 +5,7 @@ import { chatService } from '../../services/chatService';
 import { documentService } from '../../services/documentService';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import type { ChatSession, MessageSource } from '../../services/chatService';
+import { getRequiredChatModel } from '../../constants/ai';
 
 export interface ChatMessage {
   id: string;
@@ -20,7 +21,7 @@ export const SmartChatView: React.FC = () => {
   const confirmAction = useConfirm();
   // Read config from localStorage
   const includePublic = localStorage.getItem('smartChatIncludePublic') !== 'false';
-  const activeModel = localStorage.getItem('smartChatModel') || 'gemini-2.5-flash-lite';
+  const activeModel = getRequiredChatModel();
   const savedTemp = localStorage.getItem('smartChatTemperature');
   const activeTemperature = savedTemp ? parseFloat(savedTemp) : 0.2;
 

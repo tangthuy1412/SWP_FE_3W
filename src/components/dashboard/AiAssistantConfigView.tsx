@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { REQUIRED_CHAT_MODEL } from '../../constants/ai';
 
 export const AiAssistantConfigView: React.FC = () => {
   // Config states persisted in localStorage
   const [includePublic, setIncludePublic] = useState<boolean>(() => {
     return localStorage.getItem('smartChatIncludePublic') !== 'false';
   });
-  const [selectedModel, setSelectedModel] = useState<string>(() => {
-    return localStorage.getItem('smartChatModel') || 'gemini-2.5-flash-lite';
-  });
+  const [selectedModel] = useState<string>(REQUIRED_CHAT_MODEL);
   const [temperature, setTemperature] = useState<number>(() => {
     const savedTemp = localStorage.getItem('smartChatTemperature');
     return savedTemp ? parseFloat(savedTemp) : 0.2;
@@ -30,9 +29,7 @@ export const AiAssistantConfigView: React.FC = () => {
   }, [includePublic, selectedModel, temperature]);
 
   const models = [
-    { id: 'gemini-2.5-flash-lite', name: 'gemini-2.5-flash-lite', displayName: 'Gemini 2.5 Flash Lite (Default)', desc: 'Fast, lightweight and highly responsive.' },
-    { id: 'gemini-3.1-flash-lite', name: 'gemini-3.1-flash-lite', displayName: 'Gemini 3.1 Flash Lite', desc: 'Standard model for regular queries.' },
-    { id: 'gemini-3.5-flash', name: 'gemini-3.5-flash', displayName: 'Gemini 3.5 Flash', desc: 'Advanced model for complex tasks and coding.' }
+    { id: REQUIRED_CHAT_MODEL, name: REQUIRED_CHAT_MODEL, displayName: 'GPT-5.6 Luna', desc: 'Required model configured by the AI backend.' }
   ];
 
   return (
@@ -144,7 +141,6 @@ export const AiAssistantConfigView: React.FC = () => {
               {models.map((model) => (
                 <div
                   key={model.id}
-                  onClick={() => setSelectedModel(model.name)}
                   className={`p-3 rounded-lg border cursor-pointer transition-all flex items-start gap-3 select-none ${
                     selectedModel === model.name
                       ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20'
@@ -156,7 +152,7 @@ export const AiAssistantConfigView: React.FC = () => {
                       type="radio"
                       name="aiModel"
                       checked={selectedModel === model.name}
-                      onChange={() => setSelectedModel(model.name)}
+                      readOnly
                       className="accent-primary cursor-pointer h-4 w-4"
                     />
                   </div>

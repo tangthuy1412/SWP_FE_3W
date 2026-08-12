@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
+import { getRequiredChatModel } from "../../constants/ai";
 import { chatService } from "../../services/chatService";
 import type { ChatSession, MessageSource } from "../../services/chatService";
 
@@ -199,8 +200,7 @@ export const DocumentChat: React.FC<DocumentChatProps> = ({
     // Hiển thị câu hỏi ngay lập tức và khóa input trong thời gian chờ backend/LLM.
     setIsAiLoading(true);
 
-    const model =
-      localStorage.getItem("smartChatModel") || "gemini-2.5-flash-lite";
+    const model = getRequiredChatModel();
     const savedTemp = localStorage.getItem("smartChatTemperature");
     const temperature = savedTemp ? parseFloat(savedTemp) : 0.2;
 
