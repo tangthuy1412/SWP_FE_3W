@@ -14,6 +14,7 @@ export interface TopbarProps {
   onLoginClick?: () => void;
   avatarUrl?: string | null;
   activePlanName?: string;
+  activeTab?: string;
 }
 
 export const Topbar: React.FC<TopbarProps> = ({
@@ -29,6 +30,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   onLoginClick,
   avatarUrl,
   activePlanName,
+  activeTab = 'Workspace',
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -49,10 +51,8 @@ export const Topbar: React.FC<TopbarProps> = ({
     if (callback) callback();
   };
 
-  const userName = localStorage.getItem('userFullName') || 'User';
-
   return (
-    <header className="h-topbar-height bg-background/85 backdrop-blur-xl px-4 md:px-6 flex items-center justify-between shrink-0 relative z-30 select-none">
+    <header className="h-topbar-height bg-background/95 border-b border-outline-variant px-4 md:px-6 flex items-center justify-between shrink-0 relative z-30 select-none">
       <div className="flex items-center gap-3">
         <button
           onClick={onMobileMenuToggle}
@@ -63,8 +63,8 @@ export const Topbar: React.FC<TopbarProps> = ({
 
         <div className="hidden md:flex items-center gap-2">
           <div className="min-w-0">
-            <p className="text-[11px] uppercase tracking-[0.12em] text-secondary">Workspace</p>
-            <p className="font-semibold text-on-surface truncate">Good morning, {userName} <span className="text-tertiary">●</span></p>
+            <p className="text-[11px] text-secondary flex items-center gap-1">Workspace <span className="material-symbols-outlined text-[13px]">chevron_right</span></p>
+            <p className="font-semibold text-on-surface truncate">{activeTab}</p>
           </div>
         </div>
       </div>
@@ -73,7 +73,7 @@ export const Topbar: React.FC<TopbarProps> = ({
         {onSearch && <SearchInput onSearchChange={onSearch} placeholder="Search files, folders, or ask AI..." />}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5 md:gap-2">
         <button
           onClick={onHelpClick}
           className="text-secondary hover:text-on-surface hover:bg-surface p-2.5 rounded-xl transition-colors cursor-pointer select-none"
