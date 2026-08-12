@@ -1,4 +1,6 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  'https://openaihubstudybe-hchecwhbfmb4cjbd.malaysiawest-01.azurewebsites.net/api';
 
 export interface ApiResponse<T> {
   data?: T;
@@ -11,7 +13,7 @@ export const apiClient = {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
-    const url = `${BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+    const url = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
     
     // Chuẩn hóa header cho request JSON; FormData được giữ nguyên để browser tự gắn boundary.
     const headers = new Headers(options.headers);
@@ -38,7 +40,7 @@ export const apiClient = {
         const refreshToken = localStorage.getItem('refreshToken');
         if (refreshToken) {
           try {
-            const refreshResponse = await fetch(`${BASE_URL}/auth/refresh`, {
+            const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ refreshToken }),

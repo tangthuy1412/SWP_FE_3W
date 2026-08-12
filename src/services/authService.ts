@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient';
+import { API_BASE_URL, apiClient } from './apiClient';
 import type { ApiResponse } from './apiClient';
 import type { BackendResponse } from './documentService';
 
@@ -60,8 +60,7 @@ export const authService = {
   },
 
   getGoogleLoginUrl(): string {
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
-    const baseUrl = apiBaseUrl.endsWith('/api') ? apiBaseUrl.slice(0, -4) : apiBaseUrl;
+    const baseUrl = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
     return `${baseUrl}/oauth2/authorization/google`;
   }
 };
