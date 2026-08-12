@@ -44,6 +44,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 }) => {
   const navigate = useNavigate();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
   const [isSubModalOpen, setIsSubModalOpen] = useState(false);
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
   const [activePlanName, setActivePlanName] = useState<string>('');
@@ -105,6 +106,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     setIsMobileSidebarOpen(false);
   };
 
+  const handleSidebarCollapse = (collapsed: boolean) => {
+    setIsSidebarCollapsed(collapsed);
+    localStorage.setItem('sidebarCollapsed', String(collapsed));
+  };
+
   const handleLogout = async () => {
     const confirmLogout = await confirmAction({ title: 'Log out?', message: 'Are you sure you want to log out?', confirmLabel: 'Log out' });
     if (!confirmLogout) return;
@@ -135,10 +141,12 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         onUploadClick={onUploadClick}
         onNewFolderClick={onNewFolderClick}
         storage={storage || internalStorage}
+        collapsed={isSidebarCollapsed}
+        onCollapsedChange={handleSidebarCollapse}
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col md:ml-sidebar-width h-screen w-full relative overflow-hidden">
+      <div className={`flex-1 flex flex-col md:ml-[76px] ${isSidebarCollapsed ? '' : 'lg:ml-sidebar-width'} h-screen w-full relative overflow-hidden transition-[margin] duration-200`}>
         {/* Top bar header */}
         <Topbar
           onMobileMenuToggle={handleMobileMenuToggle}
@@ -153,6 +161,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           onLogoutClick={handleLogout}
           avatarUrl={avatarUrl}
           activePlanName={activePlanName}
+          activeTab={activeTab}
         />
 
         {/* Scrollable Main Canvas */}
