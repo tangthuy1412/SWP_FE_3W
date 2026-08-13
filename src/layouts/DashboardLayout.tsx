@@ -11,6 +11,7 @@ import type { DocumentUploadResponse } from '../services/documentService';
 import { useUserProfile } from '../contexts/UserProfileContext';
 import { useConfirm } from '../contexts/ConfirmContext';
 import type { StorageUsage } from '../features/dashboard/dashboard.mock';
+import { clearAuthenticatedUser } from '../lib/authStorage';
 
 const formatBytes = (bytes: number, decimals = 2) => {
   if (bytes === 0) return '0 Bytes';
@@ -98,6 +99,12 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     fetchDashboardData();
   }, [isLoggedIn]);
 
+  useEffect(() => {
+    const openPlans = () => setIsSubModalOpen(true);
+    window.addEventListener('open-subscription-plans', openPlans);
+    return () => window.removeEventListener('open-subscription-plans', openPlans);
+  }, []);
+
   const handleMobileMenuToggle = () => {
     setIsMobileSidebarOpen(!isMobileSidebarOpen);
   };
@@ -123,10 +130,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         console.error('Logout error on backend:', err);
       }
     }
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('userId');
+    clearAuthenticatedUser();
     window.location.href = '/login';
   };
 

@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { documentService } from '../../services/documentService';
 import { tagService } from '../../services/tagService';
 import subscriptionService from '../../services/subscriptionService';
+import { normalizeTagColor } from '../../lib/tagColor';
 import type { TagResponse } from '../../services/tagService';
+import type { UserSubscription } from '../../services/subscriptionService';
 
 export interface UploadModalProps {
   isOpen: boolean;
@@ -36,7 +38,9 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [isCreatingTag, setIsCreatingTag] = useState(false);
   const [dragging, setDragging] = useState(false);
-  const [maxUploadSizeMb, setMaxUploadSizeMb] = useState<number | null>(null);
+  const [subscription, setSubscription] = useState<UserSubscription | null>(null);
+  const [isPlanLoading, setIsPlanLoading] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -55,13 +59,19 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   };
 
   const loadUploadLimit = async () => {
+    setIsPlanLoading(true);
     try {
       const response = await subscriptionService.getMySubscription();
       if (response.data && response.data.success) {
-        setMaxUploadSizeMb(response.data.data.maxUploadSizeMb);
+        setSubscription(response.data.data);
+      } else {
+        setFileError('Could not verify upload access for your plan.');
       }
     } catch (error) {
       console.error('Failed to load upload limit:', error);
+      setFileError('Could not verify upload access for your plan.');
+    } finally {
+      setIsPlanLoading(false);
     }
   };
 
@@ -78,7 +88,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       setIsDropdownOpen(false);
       setNewTagName('');
       setNewTagColor('#6f8f72');
-      setMaxUploadSizeMb(null);
+      setSubscription(null);
+      setFileError(null);
     }
   }, [isOpen]);
 
@@ -97,29 +108,49 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
   // File size validation (plan limit for non-videos, 50MB for videos)
   const validateAndSetFile = (selectedFile: File) => {
+    setFile(selectedFile);
+    setFileError(null);
+
+    if (isPlanLoading || !subscription) {
+      setFileError('Your plan is still being checked. Please wait a moment and select the file again.');
+      return;
+    }
+
     if (selectedFile.size === 0) {
-      alert('Upload failed: Empty files are not allowed.');
+      setFileError('This file is empty and cannot be uploaded.');
       return;
     }
 
     const isVideo = selectedFile.type.startsWith('video/') || /\.(mp4|mkv|mov|avi|webm|wmv|flv|3gp)$/i.test(selectedFile.name);
+    const extension = selectedFile.name.includes('.') ? selectedFile.name.split('.').pop()!.toLowerCase() : '';
+    const allowedExtensions = (subscription.allowedFormats || '')
+      .split(/[,;|\s]+/)
+      .map((format) => format.trim().toLowerCase().replace(/^\./, ''))
+      .filter(Boolean);
+
+    if (!extension || !allowedExtensions.includes(extension)) {
+      setFileError(`${subscription.planName} does not support .${extension || 'unknown'} files. Allowed formats: ${allowedExtensions.map((format) => `.${format}`).join(', ') || 'none'}.`);
+      return;
+    }
     
     if (isVideo) {
+      if (!subscription.videoUpload) {
+        setFileError(`Video upload is not included in your ${subscription.planName} plan.`);
+        return;
+      }
       // Video dùng guard cố định ở frontend; backend sẽ kiểm tra riêng entitlement videoUpload của plan.
       const VIDEO_SIZE_LIMIT = 50 * 1024 * 1024; // 50MB
       if (selectedFile.size > VIDEO_SIZE_LIMIT) {
-        alert('Upload failed: Video size exceeds the maximum limit of 50MB.');
+        setFileError('This video exceeds the maximum upload size of 50 MB.');
         return;
       }
     } else {
       // File không phải video dùng kích thước tối đa từ subscription plan active của user nếu đã load được.
-      if (maxUploadSizeMb !== null && selectedFile.size > maxUploadSizeMb * 1024 * 1024) {
-        alert(`Upload failed: File size exceeds your plan limit of ${maxUploadSizeMb}MB.`);
+      if (selectedFile.size > subscription.maxUploadSizeMb * 1024 * 1024) {
+        setFileError(`This file exceeds the ${subscription.maxUploadSizeMb} MB limit of your ${subscription.planName} plan.`);
         return;
       }
     }
-
-    setFile(selectedFile);
   };
 
   // Drag and drop events
@@ -192,7 +223,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
   // Main Upload and tag link action
   const handleUpload = async () => {
-    if (!file) {
+    if (!file || fileError || !subscription) {
       alert('Please select a file to upload.');
       return;
     }
@@ -293,7 +324,11 @@ export const UploadModal: React.FC<UploadModalProps> = ({
               <div className="text-center">
                 <p className="text-body-lg font-bold text-on-surface">Drag and drop your files here</p>
                 <p className="text-body-md text-secondary mb-4">
-                  Support for PDF, DOCX, XLSX, PNG, and video ({maxUploadSizeMb ?? 'plan'}MB documents, 50MB videos)
+                  {isPlanLoading
+                    ? 'Checking the formats and limits included in your plan...'
+                    : subscription
+                      ? `${subscription.planName}: ${subscription.allowedFormats} · up to ${subscription.maxUploadSizeMb} MB${subscription.videoUpload ? ' · video included' : ''}`
+                      : 'Plan permissions are unavailable'}
                 </p>
                 <button
                   type="button"
@@ -309,6 +344,22 @@ export const UploadModal: React.FC<UploadModalProps> = ({
             )}
           </div>
 
+          {fileError && (
+            <div className="flex flex-col gap-3 rounded-lg border border-error/30 bg-error-container/30 p-3 sm:flex-row sm:items-center sm:justify-between" role="alert">
+              <div className="flex min-w-0 items-start gap-2">
+                <span className="material-symbols-outlined text-[20px] text-error">block</span>
+                <div>
+                  <p className="text-sm font-semibold text-error">This file cannot be uploaded</p>
+                  <p className="mt-0.5 text-xs text-on-error-container">{fileError}</p>
+                </div>
+              </div>
+              <button type="button" onClick={() => window.dispatchEvent(new Event('open-subscription-plans'))} className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-on-primary">
+                <span className="material-symbols-outlined text-[17px]">upgrade</span>
+                View plans
+              </button>
+            </div>
+          )}
+
           {/* Tag Section */}
           <div className="space-y-3">
             <div className="flex items-center justify-between select-none">
@@ -320,7 +371,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
             {selectedTags.length > 0 && (
               <div className="flex flex-wrap gap-2 py-1.5 animate-in fade-in duration-200">
                 {selectedTags.map((tag) => {
-                  const cleanedColor = tag.color.startsWith('#') ? tag.color : `#${tag.color}`;
+                  const cleanedColor = normalizeTagColor(tag.color) || '#64748b';
                   return (
                     <span
                       key={tag.tagId}
@@ -381,7 +432,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                     {filteredTags.length > 0 ? (
                       filteredTags.map((tag) => {
                         const isChecked = selectedTags.some((t) => t.tagId === tag.tagId);
-                        const cleanedColor = tag.color.startsWith('#') ? tag.color : `#${tag.color}`;
+                        const cleanedColor = normalizeTagColor(tag.color) || '#64748b';
                         return (
                           <label
                             key={tag.tagId}
@@ -470,7 +521,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           <button
             type="button"
             onClick={handleUpload}
-            disabled={isUploading || !file}
+            disabled={isUploading || isPlanLoading || !file || !!fileError || !subscription}
             className="px-8 py-2.5 bg-primary text-on-primary font-bold rounded-lg shadow-[0px_4px_20px_rgba(255,107,0,0.2)] hover:opacity-90 active:scale-95 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
           >
             {isUploading ? (
