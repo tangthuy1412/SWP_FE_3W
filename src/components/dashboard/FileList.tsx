@@ -13,6 +13,7 @@ export interface FileListProps {
   isTrash?: boolean;
   isCommunity?: boolean;
   isShared?: boolean;
+  isSharedByMe?: boolean;
   emptyTitle?: string;
   emptyDescription?: string;
 }
@@ -43,6 +44,7 @@ export const FileList: React.FC<FileListProps> = ({
   isTrash = false,
   isCommunity = false,
   isShared = false,
+  isSharedByMe = false,
   emptyTitle = 'No documents yet',
   emptyDescription = 'Drag and drop files here, or use the Upload button to get started.',
 }) => {
@@ -121,7 +123,7 @@ export const FileList: React.FC<FileListProps> = ({
           </div>
         </div>
         
-        <span className="hidden md:block font-label-md text-label-md text-secondary text-right">Owner</span>
+        <span className="hidden md:block font-label-md text-label-md text-secondary text-right">{isSharedByMe ? 'Shared with' : isShared ? 'Shared by' : 'Owner'}</span>
         <span className="hidden md:block font-label-md text-label-md text-secondary text-right">Last modified</span>
         <span className="hidden md:block font-label-md text-label-md text-secondary text-right">File size</span>
         <span className="block" aria-hidden="true" />
@@ -155,6 +157,7 @@ export const FileList: React.FC<FileListProps> = ({
                       isTrash={isTrash}
                       isCommunity={isCommunity}
                       isShared={isShared}
+                      isSharedByMe={isSharedByMe}
                     />
                   ))}
                 </div>
@@ -176,6 +179,7 @@ export const FileList: React.FC<FileListProps> = ({
               isTrash={isTrash}
               isCommunity={isCommunity}
               isShared={isShared}
+              isSharedByMe={isSharedByMe}
             />
           ))}
         </div>

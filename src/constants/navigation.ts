@@ -19,7 +19,7 @@ export const navigationSections: { label: string; items: NavigationItem[] }[] = 
   {
     label: 'Workspace',
     items: [
-      { name: 'AI Assistant', icon: 'smart_toy' },
+      { name: 'AI Assistant', icon: 'smart_toy', adminOnly: true },
       { name: 'Friends', icon: 'person_add', badge: 'friends' },
       { name: 'Starred', icon: 'star' },
       { name: 'Trash', icon: 'delete' },

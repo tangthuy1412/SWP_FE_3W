@@ -169,7 +169,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
 
         <div className="border-t border-outline-variant/70 pt-4 px-1">
           {!collapsed && <div className="hidden lg:block text-[10px] uppercase tracking-[0.16em] text-secondary font-semibold mb-2 px-2">Workspace</div>}
-          <button
+          {role === 'ADMIN' && <button
             type="button"
             title={collapsed ? 'AI Assistant' : undefined}
             onClick={() => handleTabClick('AI Assistant')}
@@ -181,7 +181,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
           >
             <span className="material-symbols-outlined text-[20px]">smart_toy</span>
             {!collapsed && <span className="hidden lg:inline font-label-md text-label-md">AI Assistant</span>}
-          </button>
+          </button>}
           <div className="mt-1 space-y-1">
             {secondaryNav.map((item) => {
               const isActive = activeTab === item.name;

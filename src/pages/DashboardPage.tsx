@@ -37,6 +37,8 @@ import type { FileItem } from "../features/dashboard/dashboard.mock";
 interface DocumentWithTags extends DocumentUploadResponse {
   tags?: string[];
   tagDetails?: { name: string; color: string }[];
+  sharedWith?: string;
+  shareCount?: number;
 }
 
 // Utility helper to format bytes
@@ -62,10 +64,14 @@ export const DashboardPage: React.FC = () => {
   } | null;
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState(
-    () => navigationState?.activeTab || sessionStorage.getItem("dashboardActiveTab") || "My Files",
-  );
+  const [activeTab, setActiveTab] = useState(() => {
+    const requestedTab = navigationState?.activeTab || sessionStorage.getItem("dashboardActiveTab") || "My Files";
+    return requestedTab === "AI Assistant" && localStorage.getItem("userRole") !== "ADMIN"
+      ? "My Files"
+      : requestedTab;
+  });
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [sharedView, setSharedView] = useState<"with-me" | "by-me">("with-me");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   // Real API states
@@ -149,6 +155,7 @@ export const DashboardPage: React.FC = () => {
     filterSort !== "NEWEST";
 
   const isLoggedIn = !!localStorage.getItem("token");
+  const isAdmin = localStorage.getItem("userRole") === "ADMIN";
 
   const [storageLimitGb, setStorageLimitGb] = useState<number>(2);
   const [allMyFilesSize, setAllMyFilesSize] = useState<number>(0);
@@ -554,6 +561,30 @@ export const DashboardPage: React.FC = () => {
         setIsFallbackMode(false);
       } else if (activeTab === "Shared") {
         setApiFolders([]);
+        if (sharedView === "by-me") {
+          const myDocumentsResponse = await documentService.getMyDocuments();
+          const myDocuments = myDocumentsResponse.data?.success ? myDocumentsResponse.data.data : [];
+          const documentsWithRecipients = await Promise.all(
+            myDocuments.map(async (doc) => {
+              const sharesResponse = await documentService.getDocumentShares(doc.documentId).catch(() => null);
+              const shares = sharesResponse?.data?.success ? sharesResponse.data.data : [];
+              if (shares.length === 0) return null;
+              const recipientNames = shares.map((share) => share.sharedWithName || share.sharedWithEmail);
+              return {
+                ...doc,
+                sharedWith: recipientNames.slice(0, 2).join(", ") + (recipientNames.length > 2 ? ` +${recipientNames.length - 2}` : ""),
+                shareCount: recipientNames.length,
+                tags: [],
+                tagDetails: [],
+              } as DocumentWithTags;
+            }),
+          );
+          setApiFiles(documentsWithRecipients.filter((doc): doc is DocumentWithTags => doc !== null));
+          setIsFallbackMode(false);
+          setIsLoadingFiles(false);
+          return;
+        }
+
         const docsResponse = await documentService.getSharedWithMeDocuments();
 
         let sharedDocs: DocumentUploadResponse[] = [];
@@ -611,7 +642,7 @@ export const DashboardPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchFiles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentFolderId, activeTab]);
+  }, [currentFolderId, activeTab, sharedView]);
 
   // Removed useEffect resetting folder on tab change to allow state preservation.
   // Resets are handled directly in handleTabChange.
@@ -652,6 +683,8 @@ export const DashboardPage: React.FC = () => {
       isUnread,
       tagDetails: doc.tagDetails || [],
       folderId: doc.folderId,
+      sharedWith: doc.sharedWith,
+      shareCount: doc.shareCount,
     };
   };
 
@@ -863,6 +896,7 @@ export const DashboardPage: React.FC = () => {
 
   // Trigger S3 File Upload Modal
   const handleTabChange = (tabName: string) => {
+    if (tabName === "AI Assistant" && !isAdmin) return;
     setCurrentFolderId(null);
     setCurrentFolderName(null);
     setActiveTab(tabName);
@@ -1391,7 +1425,7 @@ export const DashboardPage: React.FC = () => {
         <FriendsView />
       ) : activeTab === "Settings" ? (
         <SettingsView />
-      ) : activeTab === "AI Assistant" ? (
+      ) : activeTab === "AI Assistant" && isAdmin ? (
         <AiAssistantConfigView />
       ) : activeTab === "Smart Chat" ? (
         <SmartChatView />
@@ -1534,6 +1568,39 @@ export const DashboardPage: React.FC = () => {
             </div>
           </div>
 
+          {activeTab === "Shared" && (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-outline-variant/60 bg-surface-container-low p-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-on-surface">
+                  {sharedView === "with-me" ? "Documents shared with you" : "Documents you shared"}
+                </p>
+                <p className="text-xs text-secondary mt-0.5">
+                  {sharedView === "with-me"
+                    ? "Files another person gave you access to. The Shared by column shows the owner."
+                    : "Your files with direct recipients. Open the Share action to review or change access."}
+                </p>
+              </div>
+              <div className="inline-flex shrink-0 rounded-lg border border-outline-variant bg-surface p-1" aria-label="Shared document view">
+                <button type="button" onClick={() => { setSharedView("with-me"); setSelectedItemIds(new Set()); }} className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${sharedView === "with-me" ? "bg-primary text-on-primary" : "text-secondary hover:bg-surface-container"}`}>
+                  Shared with me
+                </button>
+                <button type="button" onClick={() => { setSharedView("by-me"); setSelectedItemIds(new Set()); }} className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${sharedView === "by-me" ? "bg-primary text-on-primary" : "text-secondary hover:bg-surface-container"}`}>
+                  Shared by me
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "Community" && (
+            <div className="flex items-start gap-3 rounded-xl border border-outline-variant/60 bg-surface-container-low p-3">
+              <span className="material-symbols-outlined text-primary text-[20px]">public</span>
+              <div>
+                <p className="text-sm font-semibold text-on-surface">Public community library</p>
+                <p className="text-xs text-secondary mt-0.5">Discover documents their owners made public. You can preview them or save a private copy to My Files.</p>
+              </div>
+            </div>
+          )}
+
           {/* Bulk Action Bar */}
           {selectedItemIds.size > 0 && (() => {
             const hasSelectedFolder = filteredFiles.some(
@@ -1559,7 +1626,7 @@ export const DashboardPage: React.FC = () => {
                       <span className="material-symbols-outlined text-[18px]">folder_open</span>
                       Save Selected to My Files
                     </Button>
-                  ) : activeTab === "Shared" ? (
+                  ) : activeTab === "Shared" && sharedView === "with-me" ? (
                     <>
                       <Button
                         variant="outline"
@@ -1633,15 +1700,28 @@ export const DashboardPage: React.FC = () => {
                   isTrash={activeTab === "Trash"}
                   isCommunity={activeTab === "Community"}
                   isShared={activeTab === "Shared"}
+                  isSharedByMe={activeTab === "Shared" && sharedView === "by-me"}
                   emptyTitle={
                     isFilterModeActive
                       ? "No documents match your filters"
-                      : undefined
+                      : activeTab === "Shared" && sharedView === "with-me"
+                        ? "No documents shared with you"
+                        : activeTab === "Shared"
+                          ? "You have not shared any documents"
+                          : activeTab === "Community"
+                            ? "No public documents yet"
+                            : undefined
                   }
                   emptyDescription={
                     isFilterModeActive
                       ? "Try adjusting or resetting your filters."
-                      : undefined
+                      : activeTab === "Shared" && sharedView === "with-me"
+                        ? "Documents shared directly with your account will appear here."
+                        : activeTab === "Shared"
+                          ? "Share a document from My Files to see its recipients here."
+                          : activeTab === "Community"
+                            ? "Public documents from the community will appear here."
+                            : undefined
                   }
                 />
               ) : (

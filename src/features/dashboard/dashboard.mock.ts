@@ -14,6 +14,8 @@ export interface FileItem {
   isUnread?: boolean;
   tagDetails?: { name: string; color: string }[];
   folderId?: number | string | null;
+  sharedWith?: string;
+  shareCount?: number;
 }
 
 export interface SuggestedItem {

@@ -13,6 +13,7 @@ export interface FileListItemProps {
   isTrash?: boolean;
   isCommunity?: boolean;
   isShared?: boolean;
+  isSharedByMe?: boolean;
 }
 
 export const FileListItem: React.FC<FileListItemProps> = ({
@@ -25,6 +26,7 @@ export const FileListItem: React.FC<FileListItemProps> = ({
   isTrash = false,
   isCommunity = false,
   isShared = false,
+  isSharedByMe = false,
 }) => {
   const [showMenu, setShowMenu] = useState(false);
   const { name, type, tags = [], owner, lastModified, size, isPublic, tagDetails = [] } = item;
@@ -187,9 +189,9 @@ export const FileListItem: React.FC<FileListItemProps> = ({
       <div className="contents">
         <span 
           className="hidden md:block font-body-md text-body-md text-secondary text-right truncate select-none"
-          title={owner}
+          title={isSharedByMe ? item.sharedWith : owner}
         >
-          {owner}
+          {isSharedByMe ? item.sharedWith || 'Link only' : owner}
         </span>
         <span className="hidden md:block font-body-md text-body-md text-secondary text-right truncate select-none">
           {lastModified}
@@ -254,7 +256,7 @@ export const FileListItem: React.FC<FileListItemProps> = ({
                     <span className="material-symbols-outlined text-[16px] text-error">delete_forever</span> Delete Permanently
                   </button>
                 </>
-              ) : isCommunity || isShared ? (
+              ) : isCommunity || (isShared && !isSharedByMe) ? (
                 <>
                   <button
                     onClick={(e) => handleAction('open', e)}

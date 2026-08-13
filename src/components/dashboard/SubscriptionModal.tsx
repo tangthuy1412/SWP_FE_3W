@@ -86,8 +86,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
         {/* Header */}
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h2 className="font-title-lg text-title-lg font-bold">Choose Your Plan</h2>
-            <p className="text-secondary text-sm mt-1">Unlock powerful AI tools and storage capacities tailored to your studies.</p>
+            <h2 className="font-title-lg text-title-lg font-bold">Plans and access</h2>
+            <p className="text-secondary text-sm mt-1">Compare exactly what your account can use. Your current plan is clearly marked.</p>
           </div>
           <button 
             onClick={onClose}
