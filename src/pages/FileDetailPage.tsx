@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
 import DocumentPreview from '../components/document/DocumentPreview';
 import DocumentChat from '../components/document/DocumentChat';
+import ChatErrorBoundary from '../components/document/ChatErrorBoundary';
 import ShareModal from '../components/dashboard/ShareModal';
 import SaveToFolderModal from '../components/dashboard/SaveToFolderModal';
 import { folderService } from '../services/folderService';
@@ -13,7 +14,6 @@ import { deleteOfflineDocument, getOfflineDocument, isOfflineDocumentSaved } fro
 import { markSharedDocAsRead } from '../lib/sharedDocReadDb';
 import type { OfflineDocumentRecord } from '../lib/offlineDocumentDb';
 import subscriptionService from '../services/subscriptionService';
-import { mockFileItems, mockSuggestedItems } from '../features/dashboard/dashboard.mock';
 import type { StorageUsage } from '../features/dashboard/dashboard.mock';
 import { useConfirm } from '../contexts/ConfirmContext';
 
@@ -93,10 +93,12 @@ export const FileDetailPage: React.FC = () => {
     isPublic?: boolean;
     fileSizeBytes?: number;
     uploadedAt?: string;
+    accessScope?: 'owned' | 'shared' | 'public';
   } | null>(null);
   const [storage, setStorage] = useState<StorageUsage | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
-  const [isChatOpen, setIsChatOpen] = useState(true);
+  // Keep the document preview independent from AI initialization. The user opens chat when needed.
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isSaveToOpen, setIsSaveToOpen] = useState(false);
   const [allFolders, setAllFolders] = useState<DocumentFolderResponse[]>([]);
@@ -151,7 +153,7 @@ export const FileDetailPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Khi mở trang, tải metadata tài liệu trước để DocumentChat biết documentId và chỉ cho hỏi khi status là READY.
+    // Khi má»Ÿ trang, táº£i metadata tÃ i liá»‡u trÆ°á»›c Ä‘á»ƒ DocumentChat biáº¿t documentId vÃ  chá»‰ cho há»i khi status lÃ  READY.
     const loadDetails = async () => {
       setIsLoading(true);
       setOfflineUnavailableMessage(null);
@@ -192,6 +194,7 @@ export const FileDetailPage: React.FC = () => {
               userId: offlineRecord.userId,
               fileSizeBytes: offlineRecord.fileSize,
               uploadedAt: offlineRecord.lastModified,
+              accessScope: offlineRecord.accessScope || 'owned',
             });
           } else if (offlineRecord) {
             if (currentUserId) await deleteOfflineDocument(numericId, currentUserId);
@@ -244,7 +247,7 @@ export const FileDetailPage: React.FC = () => {
       }
 
       if (!isNaN(numericId)) {
-        // Lấy chi tiết từ backend; nếu tài liệu không thuộc user thì lần lượt thử shared document và public document.
+        // Láº¥y chi tiáº¿t tá»« backend; náº¿u tÃ i liá»‡u khÃ´ng thuá»™c user thÃ¬ láº§n lÆ°á»£t thá»­ shared document vÃ  public document.
         let response;
         let isPublicDoc = false;
         let isSharedDoc = false;
@@ -256,13 +259,13 @@ export const FileDetailPage: React.FC = () => {
           try {
             response = await documentService.getDocumentDetail(numericId);
             if (!response.data || !response.data.success) {
-              // Nếu không phải document owner thì thử document được share cho user.
+              // Náº¿u khÃ´ng pháº£i document owner thÃ¬ thá»­ document Ä‘Æ°á»£c share cho user.
               const sharedResponse = await documentService.getSharedWithMeDocumentDetail(numericId);
               if (sharedResponse.data && sharedResponse.data.success) {
                 response = sharedResponse;
                 isSharedDoc = true;
               } else {
-                // Fallback cuối cho document public của user khác, ví dụ mở từ community page.
+                // Fallback cuá»‘i cho document public cá»§a user khÃ¡c, vÃ­ dá»¥ má»Ÿ tá»« community page.
                 const publicResponse = await documentService.getPublicDocumentDetail(numericId);
                 if (publicResponse.data && publicResponse.data.success) {
                   response = publicResponse;
@@ -302,7 +305,7 @@ export const FileDetailPage: React.FC = () => {
         if (response && response.data && response.data.success) {
           const doc = response.data.data;
 
-          // Chỉ đánh dấu đã đọc sau khi backend xác nhận tài liệu thực sự được share cho user hiện tại.
+          // Chá»‰ Ä‘Ã¡nh dáº¥u Ä‘Ã£ Ä‘á»c sau khi backend xÃ¡c nháº­n tÃ i liá»‡u thá»±c sá»± Ä‘Æ°á»£c share cho user hiá»‡n táº¡i.
           if (isSharedDoc) {
             markSharedDocAsRead(doc.documentId, currentUserId);
           }
@@ -356,6 +359,7 @@ export const FileDetailPage: React.FC = () => {
             isPublic: doc.isPublic,
             fileSizeBytes: doc.fileSize,
             uploadedAt: doc.uploadedAt,
+            accessScope: isSharedDoc ? 'shared' : isPublicDoc ? 'public' : 'owned',
           });
           setIsOfflineSaved(currentUserId ? await isOfflineDocumentSaved(doc.documentId, currentUserId) : false);
           setIsLoading(false);
@@ -370,49 +374,8 @@ export const FileDetailPage: React.FC = () => {
         }
       }
 
-      // Dữ liệu mock chỉ được dùng khi không resolve được document thật từ backend.
-      const listFile = mockFileItems.find((f) => f.id === id);
-      if (listFile) {
-        setDocumentDetails({
-          id: null,
-          name: listFile.name,
-          size: listFile.size,
-          lastModified: listFile.lastModified,
-          previewUrl: null,
-          downloadUrl: null,
-          contentType: listFile.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          status: 'READY',
-          userId: null,
-        });
-      } else {
-        const suggestedFile = mockSuggestedItems.find((f) => f.id === id);
-        if (suggestedFile) {
-          setDocumentDetails({
-            id: null,
-            name: suggestedFile.name,
-            size: suggestedFile.metadata ? suggestedFile.metadata.split('•')[1]?.trim() || '1.2 MB' : '1.2 MB',
-            lastModified: '2 hours ago',
-            previewUrl: null,
-            downloadUrl: null,
-            contentType: suggestedFile.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            status: 'READY',
-            userId: null,
-          });
-        } else {
-          // Tạo document mock mặc định để UI vẫn có dữ liệu hiển thị khi backend không trả document.
-          setDocumentDetails({
-            id: null,
-            name: 'Company Q3 Strategy & Market Analysis.pdf',
-            size: '2.4 MB',
-            lastModified: '2 hours ago',
-            previewUrl: null,
-            downloadUrl: null,
-            contentType: 'application/pdf',
-            status: 'READY',
-            userId: null,
-          });
-        }
-      }
+      setDocumentDetails(null);
+      setOfflineUnavailableMessage('This document could not be found or you do not have access to it.');
       setIsLoading(false);
     };
 
@@ -480,7 +443,7 @@ export const FileDetailPage: React.FC = () => {
     }
   };
 
-  // Chat online chỉ được render khi browser có mạng; đây là guard UI, backend vẫn kiểm tra quyền độc lập.
+  // Chat online chá»‰ Ä‘Æ°á»£c render khi browser cÃ³ máº¡ng; Ä‘Ã¢y lÃ  guard UI, backend váº«n kiá»ƒm tra quyá»n Ä‘á»™c láº­p.
   const canUseOnlineChat = isLoggedIn && isOnline;
   const canSaveCurrentDocument =
     isLoggedIn &&
@@ -520,6 +483,7 @@ export const FileDetailPage: React.FC = () => {
         contentType: documentDetails.contentType || 'application/octet-stream',
         fileSize: documentDetails.fileSizeBytes,
         lastModified: documentDetails.uploadedAt,
+        accessScope: documentDetails.accessScope || 'owned',
       });
       setIsOfflineSaved(true);
       setOfflineFeedback({ type: 'success', message: `"${documentDetails.name}" is now available offline.` });
@@ -674,14 +638,16 @@ export const FileDetailPage: React.FC = () => {
           onToggleChat={canUseOnlineChat ? () => setIsChatOpen(!isChatOpen) : undefined}
         />
 
-        {/* Chat nhận đúng documentId, tên file và trạng thái từ metadata để chạy single-document RAG. */}
+        {/* Chat nháº­n Ä‘Ãºng documentId, tÃªn file vÃ  tráº¡ng thÃ¡i tá»« metadata Ä‘á»ƒ cháº¡y single-document RAG. */}
         {isChatOpen && canUseOnlineChat && (
-          <DocumentChat
-            documentId={documentDetails.id}
-            fileName={documentDetails.name}
-            status={documentDetails.status}
-            onClose={() => setIsChatOpen(false)}
-          />
+          <ChatErrorBoundary onClose={() => setIsChatOpen(false)}>
+            <DocumentChat
+              documentId={documentDetails.id}
+              fileName={documentDetails.name}
+              status={documentDetails.status}
+              onClose={() => setIsChatOpen(false)}
+            />
+          </ChatErrorBoundary>
         )}
         {isLoggedIn && <div className="absolute right-4 bottom-4 z-20 flex items-center gap-2 rounded-lg border border-outline-variant bg-surface px-3 py-2 shadow-lg">
           <div className="flex flex-col gap-0.5">

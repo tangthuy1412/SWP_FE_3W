@@ -2,6 +2,7 @@ export interface OfflineDocumentRecord {
   key?: string;
   documentId: number;
   userId?: number | null;
+  accessScope?: 'owned' | 'shared' | 'public';
   fileName: string;
   contentType: string;
   fileSize: number;

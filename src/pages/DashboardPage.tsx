@@ -66,7 +66,7 @@ export const DashboardPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState(() => {
     const requestedTab = navigationState?.activeTab || sessionStorage.getItem("dashboardActiveTab") || "My Files";
-    return requestedTab === "AI Assistant" && localStorage.getItem("userRole") !== "ADMIN"
+    return (requestedTab === "AI Assistant" || requestedTab === "Admin") && localStorage.getItem("userRole") !== "ADMIN"
       ? "My Files"
       : requestedTab;
   });
@@ -330,12 +330,6 @@ export const DashboardPage: React.FC = () => {
     filterPage,
     isLoggedIn,
   ]);
-
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
-    setIsFolderChatOpen(currentFolderId !== null);
-  }, [currentFolderId]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Load files from backend
   const fetchFiles = async () => {
@@ -628,11 +622,10 @@ export const DashboardPage: React.FC = () => {
         setIsFallbackMode(false);
       }
     } catch (e) {
-      console.warn(
-        "API error or server offline. Falling back to local mock data.",
-        e,
-      );
-      setIsFallbackMode(true);
+      console.warn("Could not load documents from the API.", e);
+      setApiFiles([]);
+      setApiFolders([]);
+      setIsFallbackMode(false);
     }
     setIsLoadingFiles(false);
   };
@@ -744,19 +737,9 @@ export const DashboardPage: React.FC = () => {
         ];
 
   // Calculate dynamic storage usage metrics
-  const usedBytes =
-    isLoggedIn && !isFallbackMode
-      ? allMyFilesSize + allSharedFilesSize
-      : isLoggedIn
-        ? 15 * 1024 * 1024 * 1024 // 15GB mock default
-        : 0; // 0 Bytes for guests
+  const usedBytes = isLoggedIn ? allMyFilesSize + allSharedFilesSize : 0;
 
-  const totalBytes =
-    isLoggedIn && !isFallbackMode
-      ? storageLimitGb * 1024 * 1024 * 1024
-      : isLoggedIn
-        ? 100 * 1024 * 1024 * 1024 // 100GB mock default
-        : 2 * 1024 * 1024 * 1024; // 2GB for guests
+  const totalBytes = (isLoggedIn ? storageLimitGb : 2) * 1024 * 1024 * 1024;
 
   const usedPercentage = Math.min(
     100,
@@ -767,7 +750,7 @@ export const DashboardPage: React.FC = () => {
     totalBytes,
     usedPercentage,
     formattedUsed: formatBytes(usedBytes),
-    formattedTotal: `${isLoggedIn && !isFallbackMode ? storageLimitGb : isLoggedIn ? 100 : 2} GB`,
+    formattedTotal: `${isLoggedIn ? storageLimitGb : 2} GB`,
   };
 
   // When document filters are active, they replace the tab-based file list with
@@ -896,7 +879,11 @@ export const DashboardPage: React.FC = () => {
 
   // Trigger S3 File Upload Modal
   const handleTabChange = (tabName: string) => {
-    if (tabName === "AI Assistant" && !isAdmin) return;
+    if ((tabName === "AI Assistant" || tabName === "Admin") && !isAdmin) {
+      setActiveTab("My Files");
+      sessionStorage.setItem("dashboardActiveTab", "My Files");
+      return;
+    }
     setCurrentFolderId(null);
     setCurrentFolderName(null);
     setActiveTab(tabName);
@@ -934,6 +921,7 @@ export const DashboardPage: React.FC = () => {
     if (item.type === "folder" || item.type === "folder_shared") {
       setCurrentFolderId(Number(item.id));
       setCurrentFolderName(item.name);
+      setIsFolderChatOpen(false);
     } else {
       const numericDocId = Number(item.id);
       if (!isNaN(numericDocId) && (activeTab === "Shared" || item.isUnread)) {
@@ -1429,7 +1417,7 @@ export const DashboardPage: React.FC = () => {
         <AiAssistantConfigView />
       ) : activeTab === "Smart Chat" ? (
         <SmartChatView />
-      ) : activeTab === "Admin" ? (
+      ) : activeTab === "Admin" && isAdmin ? (
         <AdminPlansView />
       ) : (
         /* Main File List / Grid Section */
@@ -1849,7 +1837,7 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             {isFolderChatOpen && currentFolderId !== null && (
-              <div className="w-[480px] shrink-0 bg-surface border border-surface-variant rounded-2xl overflow-hidden shadow-lg h-[calc(100vh-180px)] min-h-[450px] animate-in slide-in-from-right duration-250">
+              <div className="fixed inset-x-3 bottom-3 top-[76px] z-40 overflow-hidden rounded-lg border border-outline-variant bg-surface shadow-2xl md:left-auto md:right-4 md:w-[460px] lg:static lg:z-auto lg:h-[calc(100vh-180px)] lg:min-h-[450px] lg:w-[430px] lg:shrink-0 lg:shadow-lg animate-in slide-in-from-right duration-250">
                 <DocumentChat
                   isFolderMode={true}
                   folderId={currentFolderId}

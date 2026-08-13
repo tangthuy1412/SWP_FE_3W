@@ -34,6 +34,7 @@ export interface SaveOfflineDocumentInput {
   contentType: string;
   fileSize: number;
   lastModified: string;
+  accessScope?: 'owned' | 'shared' | 'public';
 }
 
 export interface OfflineSyncResult {
@@ -119,7 +120,11 @@ export const offlineDocumentService = {
       );
     }
 
-    const downloadResponse = await documentService.getDocumentDownloadUrl(input.documentId);
+    const downloadResponse = input.accessScope === 'shared'
+      ? await documentService.getSharedWithMeDownloadUrl(input.documentId)
+      : input.accessScope === 'public'
+        ? await documentService.getPublicDocumentDownloadUrl(input.documentId)
+        : await documentService.getDocumentDownloadUrl(input.documentId);
     if (!downloadResponse.data?.success) {
       if (downloadResponse.status === 401 || downloadResponse.status === 403) {
         throw new OfflineDocumentError(
@@ -148,9 +153,19 @@ export const offlineDocumentService = {
     const downloadInfo = downloadResponse.data.data;
     let fileResponse: Response;
     try {
-      fileResponse = await fetch(downloadInfo.url);
+      fileResponse = await fetch(downloadInfo.url, {
+        method: 'GET',
+        mode: 'cors',
+        credentials: 'omit',
+      });
     } catch (error) {
       if (isNetworkError(error)) {
+        if (navigator.onLine) {
+          throw new OfflineDocumentError(
+            'BLOB_FAILED',
+            `The file server blocked offline saving from ${window.location.origin}. Allow this origin in Azure Storage CORS for GET requests, then try again.`
+          );
+        }
         throw new OfflineDocumentError(
           'NETWORK_INTERRUPTED',
           'The download was interrupted. Check your connection and try saving again.'
@@ -193,6 +208,7 @@ export const offlineDocumentService = {
     const record = {
       documentId: input.documentId,
       userId: input.userId,
+      accessScope: input.accessScope || 'owned',
       fileName: input.fileName,
       contentType: blob.type || downloadInfo.contentType || input.contentType,
       fileSize: blob.size || input.fileSize,
@@ -235,7 +251,11 @@ export const offlineDocumentService = {
 
       for (const record of records) {
         try {
-          const detailResponse = await documentService.getDocumentDetail(record.documentId);
+          const detailResponse = record.accessScope === 'shared'
+            ? await documentService.getSharedWithMeDocumentDetail(record.documentId)
+            : record.accessScope === 'public'
+              ? await documentService.getPublicDocumentDetail(record.documentId)
+              : await documentService.getDocumentDetail(record.documentId);
           let updatedRecord: OfflineDocumentRecord;
 
           if (detailResponse.data?.success) {
@@ -301,6 +321,7 @@ export const offlineDocumentService = {
       contentType: record.remoteContentType || record.contentType,
       fileSize: record.remoteFileSize || record.fileSize,
       lastModified: record.remoteLastModified || record.lastModified,
+      accessScope: record.accessScope || 'owned',
     });
 
     const syncedRecord: OfflineDocumentRecord = {
