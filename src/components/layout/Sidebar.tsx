@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../common/Button';
 import StorageUsageCard from '../dashboard/StorageUsageCard';
-import { mockStorageUsage } from '../../features/dashboard/dashboard.mock';
 import type { StorageUsage } from '../../features/dashboard/dashboard.mock';
 import { documentService } from '../../services/documentService';
 import { friendService } from '../../services/friendService';
@@ -218,7 +217,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
 
       {/* Footer Area */}
       <div className="mt-auto px-3 pt-4">
-        {!collapsed && <div className="hidden lg:block"><StorageUsageCard storage={storage || mockStorageUsage} /></div>}
+        {!collapsed && storage && <div className="hidden lg:block"><StorageUsageCard storage={storage} /></div>}
         <button
           type="button"
           title={collapsed ? 'Settings' : undefined}

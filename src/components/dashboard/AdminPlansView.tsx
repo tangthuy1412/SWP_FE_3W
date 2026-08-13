@@ -6,31 +6,6 @@ import type { SubscriptionPlan, PaymentRevenue, SystemOrder } from '../../servic
 import type { AdminUser } from '../../services/userService';
 import { useConfirm } from '../../contexts/ConfirmContext';
 
-interface MockOrder {
-  id: number;
-  userName: string;
-  email: string;
-  planName: string;
-  amount: number;
-  paymentMethod: string;
-  status: 'SUCCESS' | 'PENDING' | 'FAILED';
-  paidAt: string;
-}
-
-const initialMockOrders: MockOrder[] = [
-  { id: 1, userName: 'Long Nguyen', email: 'long@example.com', planName: 'PLUS', amount: 99000, paymentMethod: 'VNPAY', status: 'SUCCESS', paidAt: 'Today, 14:32' },
-  { id: 2, userName: 'Hai Nam', email: 'hainam@example.com', planName: 'PLUS', amount: 99000, paymentMethod: 'VNPAY', status: 'SUCCESS', paidAt: 'Today, 10:15' },
-  { id: 3, userName: 'Thanh Tung', email: 'tung@example.com', planName: 'PRO', amount: 199000, paymentMethod: 'VNPAY', status: 'FAILED', paidAt: 'Yesterday, 18:45' },
-  { id: 4, userName: 'Minh Chau', email: 'chau@example.com', planName: 'VIP', amount: 499000, paymentMethod: 'VNPAY', status: 'PENDING', paidAt: '03-07-2026, 15:00' },
-];
-
-const initialMockUsers: AdminUser[] = [
-  { userId: 1, fullName: 'Nguyen Linh', email: 'linh.n@company.vn', provider: 'LOCAL', role: 'USER', status: 'ACTIVE', verified: true, bio: null, createdAt: '2026-07-01T10:30:00', updatedAt: null },
-  { userId: 2, fullName: 'Tran Huy', email: 'huy.tran@dev.io', provider: 'LOCAL', role: 'USER', status: 'ACTIVE', verified: true, bio: null, createdAt: '2026-07-02T10:30:00', updatedAt: null },
-  { userId: 3, fullName: 'Minh Anh', email: 'minhanh@gmail.com', provider: 'GOOGLE', role: 'USER', status: 'ACTIVE', verified: true, bio: null, createdAt: '2026-07-03T10:30:00', updatedAt: null },
-  { userId: 4, fullName: 'Le Hoang Nam', email: 'namlh@aetherdocs.vn', provider: 'LOCAL', role: 'ADMIN', status: 'ACTIVE', verified: true, bio: null, createdAt: '2026-07-04T10:30:00', updatedAt: null },
-];
-
 export const AdminPlansView: React.FC = () => {
   const confirmAction = useConfirm();
   // Plan State
@@ -62,7 +37,7 @@ export const AdminPlansView: React.FC = () => {
   // Real Admin Users State
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [userSearch, setUserSearch] = useState('');
-  const [totalUsers, setTotalUsers] = useState(12845);
+  const [totalUsers, setTotalUsers] = useState(0);
 
   const resetPlanForm = () => {
     setName('');
@@ -120,43 +95,33 @@ export const AdminPlansView: React.FC = () => {
 
       if (plansRes.data && plansRes.data.success) {
         setPlans(plansRes.data.data);
-      }
+      } else setPlans([]);
 
       if (revRes.data && revRes.data.success) {
         setRevenue(revRes.data.data);
-      }
+      } else setRevenue(null);
 
       if (ordersRes.data && ordersRes.data.success && ordersRes.data.data.payments) {
         setOrders(ordersRes.data.data.payments);
-      } else {
-        setOrders(initialMockOrders.map(m => ({
-          paymentId: m.id,
-          transactionNo: m.userName, // Display name for customer
-          userId: m.id,
-          userEmail: m.email,
-          planId: 1,
-          planName: m.planName,
-          amount: m.amount,
-          paymentMethod: m.paymentMethod,
-          status: m.status,
-          responseCode: m.status === 'SUCCESS' ? '00' : '99',
-          createdAt: m.paidAt,
-          paidAt: m.paidAt
-        })));
-      }
+      } else setOrders([]);
 
       if (usersRes.data && usersRes.data.success && usersRes.data.data) {
         setUsers(usersRes.data.data.users);
         setTotalUsers(usersRes.data.data.totalElements || usersRes.data.data.users.length);
       } else {
-        setUsers(initialMockUsers);
-        setTotalUsers(initialMockUsers.length);
+        setUsers([]);
+        setTotalUsers(0);
       }
+      const failedSections = [plansRes, revRes, ordersRes, usersRes].filter((response) => !response.data).length;
+      if (failedSections > 0) setError(`Could not load ${failedSections} administration data section${failedSections === 1 ? '' : 's'}.`);
     } catch (err) {
       console.error('Error loading admin data:', err);
       setError('An unexpected error occurred while loading administration panel.');
-      setUsers(initialMockUsers);
-      setTotalUsers(initialMockUsers.length);
+      setPlans([]);
+      setRevenue(null);
+      setOrders([]);
+      setUsers([]);
+      setTotalUsers(0);
     } finally {
       setIsLoading(false);
     }
@@ -315,14 +280,6 @@ export const AdminPlansView: React.FC = () => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
   };
 
-  const getUserPlan = (user: AdminUser) => {
-    if (user.role === 'ADMIN') return 'Admin';
-    if (user.email === 'linh.n@company.vn' || user.email === 'huy.tran@dev.io') {
-      return 'Pro';
-    }
-    return 'Free';
-  };
-
   const getCustomerName = (order: SystemOrder) => {
     const foundUser = users.find(u => u.userId === order.userId || u.email.toLowerCase() === order.userEmail.toLowerCase());
     if (foundUser && foundUser.fullName) {
@@ -379,7 +336,7 @@ export const AdminPlansView: React.FC = () => {
           <div>
             <p className="text-secondary text-xs font-semibold uppercase tracking-wider">Active Plans</p>
             <h3 className="text-2xl md:text-3xl font-bold mt-1 text-on-surface">
-              {plans.length || 3}
+              {plans.length}
             </h3>
           </div>
           <div className="w-12 h-12 rounded-lg bg-tertiary/10 flex items-center justify-center text-tertiary">
@@ -392,7 +349,7 @@ export const AdminPlansView: React.FC = () => {
           <div>
             <p className="text-secondary text-xs font-semibold uppercase tracking-wider">Monthly Revenue</p>
             <h3 className="text-2xl md:text-3xl font-bold mt-1 text-on-surface">
-              {revenue ? formatCurrency(revenue.totalRevenue) : '₫245.8M'}
+              {revenue ? formatCurrency(revenue.totalRevenue) : '--'}
             </h3>
           </div>
           <div className="w-12 h-12 rounded-lg bg-success-container/30 flex items-center justify-center text-success">
@@ -463,11 +420,8 @@ export const AdminPlansView: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                            getUserPlan(user) === 'Admin' ? 'bg-tertiary-container/20 text-tertiary' :
-                            getUserPlan(user) === 'Pro' ? 'bg-primary/10 text-primary' : 'bg-surface-variant text-secondary'
-                          }`}>
-                            {getUserPlan(user)}
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${user.role === 'ADMIN' ? 'bg-tertiary-container/20 text-tertiary' : 'bg-surface-variant text-secondary'}`}>
+                            {user.role === 'ADMIN' ? 'Admin' : 'Not provided'}
                           </span>
                         </td>
                         <td className="px-6 py-4">

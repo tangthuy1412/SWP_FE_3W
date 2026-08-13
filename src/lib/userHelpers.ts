@@ -27,7 +27,7 @@ export const saveKnownUser = (
  * Resolves the owner's email based on their user ID.
  * Returns the current user's email if the ID belongs to the logged-in user.
  * Looks up in the locally stored known users registry.
- * Falls back to default mock emails or a generated user email format.
+ * Returns a neutral label when the backend has not provided owner information.
  */
 export const resolveOwnerEmail = (userId: number | string | null | undefined): string => {
   if (!userId) return 'Unknown';
@@ -56,13 +56,7 @@ export const resolveOwnerEmail = (userId: number | string | null | undefined): s
     console.error('Error reading known users from localStorage', e);
   }
   
-  // Static backend mock seed accounts fallbacks
-  const numId = Number(userId);
-  if (numId === 1) return 'long@example.com';
-  if (numId === 9) return 'sarah@example.com';
-  
-  // Cleaner email-based fallback format
-  return `user${userId}@example.com`;
+  return `User ${userId}`;
 };
 
 /**
@@ -95,10 +89,6 @@ export const resolveOwnerName = (userId: number | string | null | undefined): st
   } catch (e) {
     console.error('Error reading known users from localStorage', e);
   }
-  
-  const numId = Number(userId);
-  if (numId === 1) return 'Long Nguyen';
-  if (numId === 9) return 'Sarah J.';
   
   return `User ${userId}`;
 };
