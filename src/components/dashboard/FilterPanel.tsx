@@ -1,5 +1,6 @@
 import React from 'react';
 import type { TagResponse } from '../../services/tagService';
+import { normalizeTagColor } from '../../lib/tagColor';
 import type { DocumentFilterSort } from '../../services/documentService';
 
 const CONTENT_TYPE_OPTIONS: { label: string; value: string }[] = [
@@ -75,7 +76,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
           ) : (
             <div className="max-h-32 overflow-y-auto scrollbar-thin border border-outline-variant/40 rounded-lg divide-y divide-outline-variant/30">
               {availableTags.map((tag) => {
-                const cleanedColor = tag.color.startsWith('#') ? tag.color : `#${tag.color}`;
+                const cleanedColor = normalizeTagColor(tag.color) || '#64748b';
                 const isChecked = selectedTagIds.includes(tag.tagId);
                 return (
                   <label

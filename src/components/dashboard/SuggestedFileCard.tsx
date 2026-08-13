@@ -1,6 +1,7 @@
 import React from 'react';
 import type { SuggestedItem } from '../../features/dashboard/dashboard.mock';
 import Badge from '../common/Badge';
+import { getTagColorStyle, normalizeTagColor } from '../../lib/tagColor';
 
 export interface SuggestedFileCardProps {
   item: SuggestedItem;
@@ -33,15 +34,6 @@ export const SuggestedFileCard: React.FC<SuggestedFileCardProps> = ({
 
   const handleCardClick = () => {
     if (onClick) onClick(item);
-  };
-
-  const formatColorStyle = (colorCode: string) => {
-    const cleanColor = colorCode.startsWith('#') ? colorCode : `#${colorCode}`;
-    return {
-      backgroundColor: `${cleanColor}15`, // ~8% opacity
-      color: cleanColor,
-      borderColor: `${cleanColor}30`, // ~18% opacity
-    };
   };
 
   // 1. Render Team Workspace (spans 2 columns, Bento style)
@@ -130,8 +122,8 @@ export const SuggestedFileCard: React.FC<SuggestedFileCardProps> = ({
             <div className="flex gap-1 mt-1">
               {tags.map((tag) => {
                 const details = tagDetails.find((t) => t.name.trim().toLowerCase() === tag.trim().toLowerCase());
-                if (details && details.color) {
-                  const colorStyle = formatColorStyle(details.color);
+                if (details && normalizeTagColor(details.color)) {
+                  const colorStyle = getTagColorStyle(details.color);
                   return (
                     <span
                       key={tag}

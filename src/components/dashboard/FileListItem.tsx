@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { FileItem } from '../../features/dashboard/dashboard.mock';
 import Badge from '../common/Badge';
 import { getFileIconDetails } from '../../lib/fileHelpers';
+import { getTagColorStyle, normalizeTagColor } from '../../lib/tagColor';
 
 export interface FileListItemProps {
   item: FileItem;
@@ -78,15 +79,6 @@ export const FileListItem: React.FC<FileListItemProps> = ({
   const visibleTags = tags.slice(0, maxVisibleTags);
   const extraTagsCount = tags.length - maxVisibleTags;
 
-  const formatColorStyle = (colorCode: string) => {
-    const cleanColor = colorCode.startsWith('#') ? colorCode : `#${colorCode}`;
-    return {
-      backgroundColor: `${cleanColor}15`, // ~8% opacity
-      color: cleanColor,
-      borderColor: `${cleanColor}30`, // ~18% opacity
-    };
-  };
-
   return (
     <div
       onClick={handleRowClick}
@@ -150,18 +142,19 @@ export const FileListItem: React.FC<FileListItemProps> = ({
         )}
         
         {tags.length > 0 && (
-          <div className="flex gap-1 ml-2 overflow-hidden flex-wrap max-h-5 hidden md:flex items-center">
+          <div className="ml-2 hidden min-w-0 items-center gap-1 overflow-hidden md:flex">
             {visibleTags.map((tag) => {
               const details = tagDetails.find((t) => t.name.trim().toLowerCase() === tag.trim().toLowerCase());
-              if (details && details.color) {
-                const colorStyle = formatColorStyle(details.color);
+              if (details && normalizeTagColor(details.color)) {
+                const colorStyle = getTagColorStyle(details.color);
                 return (
                   <span
                     key={tag}
-                    className="px-1.5 py-0.5 rounded-full text-[10px] font-medium border select-none w-fit inline-flex items-center transition-colors"
+                    title={tag}
+                    className="inline-flex h-6 max-w-32 shrink-0 items-center truncate rounded-full border px-2 text-[11px] font-medium leading-none select-none"
                     style={colorStyle}
                   >
-                    {tag}
+                    <span className="truncate">{tag}</span>
                   </span>
                 );
               }
