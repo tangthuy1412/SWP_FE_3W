@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { saveKnownUser } from '../lib/userHelpers';
+import { clearAuthenticatedUser, normalizeRole } from '../lib/authStorage';
 
 export const OAuth2RedirectHandler: React.FC = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ export const OAuth2RedirectHandler: React.FC = () => {
     const fullName = params.get('fullName');
 
     if (token && refreshToken) {
+      clearAuthenticatedUser();
       localStorage.setItem('token', token);
       localStorage.setItem('refreshToken', refreshToken);
       if (email) {
@@ -23,9 +25,7 @@ export const OAuth2RedirectHandler: React.FC = () => {
         localStorage.setItem('userId', userId);
       }
       const role = params.get('role');
-      if (role) {
-        localStorage.setItem('userRole', role);
-      }
+      localStorage.setItem('userRole', normalizeRole(role));
       if (fullName) {
         localStorage.setItem('userFullName', fullName);
       }

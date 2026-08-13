@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { saveKnownUser } from '../lib/userHelpers';
+import { clearAuthenticatedUser, normalizeRole } from '../lib/authStorage';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -36,11 +37,12 @@ export const LoginPage: React.FC = () => {
 
     if (response.data && response.data.success) {
       const data = response.data.data;
+      clearAuthenticatedUser();
       localStorage.setItem('token', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
       localStorage.setItem('userEmail', data.email);
       localStorage.setItem('userId', String(data.userId));
-      localStorage.setItem('userRole', data.role || 'USER');
+      localStorage.setItem('userRole', normalizeRole(data.role));
       const fullName = data.fullName || data.email.split('@')[0];
       localStorage.setItem('userFullName', fullName);
       saveKnownUser(data.userId, fullName, data.email);
@@ -53,18 +55,6 @@ export const LoginPage: React.FC = () => {
 
   const handleGoogleLogin = () => {
     window.location.href = authService.getGoogleLoginUrl();
-  };
-
-  // Shortcut for testing the frontend offline
-  const handleDemoBypass = () => {
-    localStorage.setItem('token', 'demo-bypass-token-12345');
-    localStorage.setItem('refreshToken', 'demo-bypass-refresh-token-12345');
-    localStorage.setItem('userEmail', 'demo@example.com');
-    localStorage.setItem('userId', '1');
-    localStorage.setItem('userRole', 'ADMIN'); // Bypass login as Admin for testing
-    localStorage.setItem('userFullName', 'Demo User');
-    saveKnownUser(1, 'Demo User', 'demo@example.com');
-    navigate('/dashboard');
   };
 
   return (
@@ -191,21 +181,6 @@ export const LoginPage: React.FC = () => {
             />
           </svg>
           Continue with Google
-        </button>
-
-        <div className="relative flex py-2 items-center">
-          <div className="flex-grow border-t border-outline-variant/40" />
-          <span className="flex-shrink mx-4 text-secondary text-xs font-mono-label">OR</span>
-          <div className="flex-grow border-t border-outline-variant/40" />
-        </div>
-
-        {/* Demo Bypass button for easy testing */}
-        <button
-          onClick={handleDemoBypass}
-          className="w-full h-12 border border-primary text-primary font-label-md text-label-md rounded-xl flex items-center justify-center gap-2 hover:bg-primary/5 active:scale-[0.98] transition-all shadow-sm cursor-pointer font-semibold"
-        >
-          <span className="material-symbols-outlined text-[20px] select-none">verified_user</span>
-          Demo Login (Bypass API)
         </button>
 
         <p className="text-center font-body-md text-xs text-secondary">

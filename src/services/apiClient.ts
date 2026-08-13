@@ -1,3 +1,5 @@
+import { clearAuthenticatedUser } from '../lib/authStorage';
+
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
   'https://openaihubstudybe-hchecwhbfmb4cjbd.malaysiawest-01.azurewebsites.net/api';
@@ -87,10 +89,7 @@ export const apiClient = {
         }
 
         // Khi refresh thất bại, xóa credential cũ và đưa user về login để tránh tiếp tục gọi API không xác thực.
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('userEmail');
-        localStorage.removeItem('userId');
+        clearAuthenticatedUser();
         
         const path = window.location.pathname;
         if (path !== '/login' && path !== '/register' && path !== '/verify-otp' && path !== '/dashboard') {
