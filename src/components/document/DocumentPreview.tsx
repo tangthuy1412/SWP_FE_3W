@@ -52,8 +52,9 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({
   const isPdf = contentType === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf');
   const isImage = contentType?.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(fileName);
   const isDocx = contentType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || fileName.toLowerCase().endsWith('.docx');
+  const isLegacyDoc = contentType === 'application/msword' || /\.doc$/i.test(fileName);
   const isVideo = contentType?.startsWith('video/') || /\.(mp4|mkv|mov|avi|webm|wmv|flv|3gp|ogg)$/i.test(fileName.toLowerCase());
-  const isUnsupported = !isPdf && !isImage && !isDocx && !isVideo;
+  const isUnsupported = !isPdf && !isImage && !isDocx && !isLegacyDoc && !isVideo;
   const sourceUrl = localBlobUrl || previewUrl;
 
   useEffect(() => {
@@ -107,6 +108,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({
     if (isPdf) return { icon: 'picture_as_pdf', bg: 'bg-error-container text-error' };
     if (isImage) return { icon: 'image', bg: 'bg-primary-container text-primary' };
     if (isDocx) return { icon: 'description', bg: 'bg-info-container text-info bg-[#e8f0fe] text-[#1a73e8]' };
+    if (isLegacyDoc) return { icon: 'description', bg: 'bg-[#e8f0fe] text-[#1a73e8]' };
     if (isVideo) return { icon: 'video_file', bg: 'bg-warning-container text-warning text-[#e0a800] bg-[#fef7e0]' };
     return { icon: 'draft', bg: 'bg-surface-container-high text-secondary' };
   };
@@ -114,7 +116,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({
   const iconInfo = getFileIconInfo();
 
   // Determine if we should show zoom controls
-  const showZoomControls = !isUnsupported && !isVideo && !(isPdf && sourceUrl);
+  const showZoomControls = !isUnsupported && !isLegacyDoc && !isVideo && !(isPdf && sourceUrl);
 
   const renderContent = () => {
     // 1. PDF
@@ -297,6 +299,29 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      );
+    }
+
+    // Legacy .doc files use Microsoft's binary format and cannot be parsed by docx-preview.
+    if (isLegacyDoc) {
+      return (
+        <div className="flex flex-1 items-center justify-center overflow-auto bg-surface-container-low p-container-padding">
+          <div className="mx-4 flex w-full max-w-lg flex-col items-center gap-5 rounded-lg border border-outline-variant bg-surface p-8 text-center shadow">
+            <div className="grid h-16 w-16 place-items-center rounded-lg bg-[#e8f0fe] text-[#1a73e8]">
+              <span className="material-symbols-outlined text-[36px]">description</span>
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-on-surface">Chưa thể xem trước tệp Word .doc</h3>
+              <p className="mt-2 text-sm leading-6 text-secondary">
+                Đây là định dạng Word 97-2003 cũ. Máy chủ cần chuyển tệp sang PDF hoặc DOCX trước khi trình duyệt có thể hiển thị nội dung.
+              </p>
+            </div>
+            <button type="button" onClick={onDownloadClick} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary">
+              <span className="material-symbols-outlined text-[18px]">download</span>
+              Tải tệp gốc
+            </button>
           </div>
         </div>
       );

@@ -7,6 +7,7 @@ const CONTENT_TYPE_OPTIONS: { label: string; value: string }[] = [
   { label: 'All types', value: '' },
   { label: 'PDF', value: 'application/pdf' },
   { label: 'Word (.docx)', value: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' },
+  { label: 'Word 97-2003 (.doc)', value: 'application/msword' },
   { label: 'Excel (.xlsx)', value: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
   { label: 'PowerPoint (.pptx)', value: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' },
   { label: 'PNG Image', value: 'image/png' },

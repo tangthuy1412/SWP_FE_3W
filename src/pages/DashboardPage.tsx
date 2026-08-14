@@ -51,6 +51,16 @@ const formatBytes = (bytes: number, decimals = 2) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
 };
 
+const formatPermanentDeleteError = (error: string | undefined, itemType: FileItem["type"]) => {
+  const message = error || "";
+  if (/chat_session_document|reference constraint|foreign key|conflicted with the reference/i.test(message)) {
+    return itemType === "folder" || itemType === "folder_shared"
+      ? "This folder contains documents used by saved AI conversations. Remove those chat references before permanently deleting the folder."
+      : "This document is used by a saved AI conversation. Remove its chat reference before permanently deleting it.";
+  }
+  return message || "The item could not be permanently deleted. Please try again.";
+};
+
 export const DashboardPage: React.FC = () => {
   const confirmAction = useConfirm();
   const navigate = useNavigate();
@@ -1075,9 +1085,7 @@ export const DashboardPage: React.FC = () => {
           alert(`${item.type === "folder" ? "Folder" : "Document"} permanently deleted!`);
           fetchFiles();
         } else {
-          alert(
-            `Failed to delete permanently: ${response.error || "Server error"}`,
-          );
+          alert(formatPermanentDeleteError(response.error, item.type));
           setIsLoadingFiles(false);
         }
       } else {
