@@ -49,6 +49,10 @@ export interface CreateChatSessionPayload {
   temperature?: number | null;
 }
 
+export interface SendChatMessagePayload {
+  question: string;
+}
+
 // The frontend intentionally uses only the four session endpoints documented by the backend.
 export const chatService = {
   getSessions(): Promise<ApiResponse<BackendResponse<ChatSession[]>>> {
@@ -67,9 +71,10 @@ export const chatService = {
     sessionId: number,
     question: string,
   ): Promise<ApiResponse<BackendResponse<ChatMessageFromBackend>>> {
+    const payload: SendChatMessagePayload = { question };
     return apiClient.post<BackendResponse<ChatMessageFromBackend>>(
       `/chat/sessions/${sessionId}/messages`,
-      { question },
+      payload,
     );
   },
 
