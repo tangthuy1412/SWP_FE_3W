@@ -78,6 +78,13 @@ export const FileListItem: React.FC<FileListItemProps> = ({
   const maxVisibleTags = 2;
   const visibleTags = tags.slice(0, maxVisibleTags);
   const extraTagsCount = tags.length - maxVisibleTags;
+  const statusInfo = item.processingStatus ? {
+    UPLOADED: { label: 'Uploaded', detail: 'Waiting for processing', icon: 'schedule', classes: 'text-secondary bg-surface-container' },
+    PARSING: { label: 'Reading', detail: 'Extracting document content', icon: 'document_scanner', classes: 'text-tertiary bg-tertiary-fixed/25' },
+    INDEXING: { label: 'Preparing AI', detail: 'Building searchable knowledge', icon: 'manage_search', classes: 'text-primary bg-primary-fixed/30' },
+    READY: { label: 'Ready', detail: 'Ready to chat and share', icon: 'check_circle', classes: 'text-success bg-success-container/40' },
+    FAILED: { label: 'Failed', detail: 'Processing failed; upload again', icon: 'error', classes: 'text-error bg-error-container/40' },
+  }[item.processingStatus] : null;
 
   return (
     <div
@@ -119,6 +126,13 @@ export const FileListItem: React.FC<FileListItemProps> = ({
         <span className="font-body-md text-body-md text-on-surface font-medium truncate">
           {name}
         </span>
+
+        {type === 'file' && statusInfo && (
+          <span className={`hidden shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold sm:inline-flex ${statusInfo.classes}`} title={statusInfo.detail}>
+            <span className="material-symbols-outlined text-[14px]">{statusInfo.icon}</span>
+            {statusInfo.label}
+          </span>
+        )}
 
         {/* Unread indicator for shared files */}
         {isShared && item.isUnread && (

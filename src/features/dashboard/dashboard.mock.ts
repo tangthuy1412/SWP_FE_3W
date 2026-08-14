@@ -16,6 +16,7 @@ export interface FileItem {
   folderId?: number | string | null;
   sharedWith?: string;
   shareCount?: number;
+  processingStatus?: 'UPLOADED' | 'PARSING' | 'INDEXING' | 'READY' | 'FAILED';
 }
 
 export interface SuggestedItem {

@@ -123,6 +123,11 @@ export const DocumentChat: React.FC<DocumentChatProps> = ({
             throw new Error(createResponse.error || 'Could not create a chat session.');
           }
           newlyCreatedSession = createResponse.data.data;
+          if (!sameDocuments(newlyCreatedSession.selectedDocumentIds, selectedIds)) {
+            throw new Error(
+              `The chat session includes ${newlyCreatedSession.selectedDocumentIds?.length || 0} of ${selectedIds.length} selected documents. The server must preserve every selectedDocumentId for multi-document chat.`,
+            );
+          }
           id = newlyCreatedSession.sessionId;
           if (!cancelled) {
             setSessionId(id);
@@ -145,6 +150,11 @@ export const DocumentChat: React.FC<DocumentChatProps> = ({
           });
           if (!replacementResponse.data?.success) {
             throw new Error(replacementResponse.error || 'Could not replace the missing chat session.');
+          }
+          if (!sameDocuments(replacementResponse.data.data.selectedDocumentIds, selectedIds)) {
+            throw new Error(
+              `The replacement session includes ${replacementResponse.data.data.selectedDocumentIds?.length || 0} of ${selectedIds.length} selected documents.`,
+            );
           }
           if (!cancelled) {
             setSessionId(replacementResponse.data.data.sessionId);
@@ -226,6 +236,13 @@ export const DocumentChat: React.FC<DocumentChatProps> = ({
       useGeneralKnowledge: false,
     });
     if (response.data?.success) {
+      const returnedIds = response.data.data.selectedDocumentIds;
+      const expectedIds = new Set(selectedIds);
+      if (!returnedIds || returnedIds.length !== selectedIds.length || !returnedIds.every((id) => expectedIds.has(id))) {
+        setError(`The server created this session with ${returnedIds?.length || 0} of ${selectedIds.length} selected documents.`);
+        setLoadingHistory(false);
+        return;
+      }
       setSessionId(response.data.data.sessionId);
       setScopeSessions((current) => [response.data!.data, ...current]);
       setMessages([]);

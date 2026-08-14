@@ -678,6 +678,7 @@ export const DashboardPage: React.FC = () => {
       folderId: doc.folderId,
       sharedWith: doc.sharedWith,
       shareCount: doc.shareCount,
+      processingStatus: doc.status,
     };
   };
 

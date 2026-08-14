@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import SearchInput from '../common/SearchInput';
+import NotificationCenter from './NotificationCenter';
 
 export interface TopbarProps {
   onMobileMenuToggle?: () => void;
@@ -81,13 +82,7 @@ export const Topbar: React.FC<TopbarProps> = ({
           <span className="material-symbols-outlined select-none">help</span>
         </button>
 
-        <button
-          onClick={onNotificationClick}
-          className="text-secondary hover:text-on-surface hover:bg-surface p-2.5 rounded-xl transition-colors relative cursor-pointer select-none"
-        >
-          <span className="material-symbols-outlined select-none">notifications</span>
-          <span className="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-surface" />
-        </button>
+        {isLoggedIn && <NotificationCenter onOpenFriends={onNotificationClick} />}
 
         <button
           onClick={onUpgradeClick}

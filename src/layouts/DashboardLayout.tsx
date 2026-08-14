@@ -155,7 +155,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         <Topbar
           onMobileMenuToggle={handleMobileMenuToggle}
           onSearch={onSearch}
-          onNotificationClick={() => alert('Notifications clicked!')}
+          onNotificationClick={() => onTabChange?.('Friends')}
           onHelpClick={() => alert('Help center clicked!')}
           onUpgradeClick={() => setIsSubModalOpen(true)}
           onBillingClick={() => setIsBillingModalOpen(true)}

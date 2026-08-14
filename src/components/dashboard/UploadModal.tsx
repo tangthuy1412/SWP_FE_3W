@@ -244,6 +244,13 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           }
         }
 
+        window.dispatchEvent(new CustomEvent('aether-notification', { detail: {
+          id: `upload-${docId}`,
+          type: 'upload',
+          title: 'Upload completed',
+          message: `${file.name} was uploaded and is being prepared for AI.`,
+          createdAt: new Date().toISOString(),
+        } }));
         alert('File uploaded successfully!');
         onUploadSuccess();
         onClose();
