@@ -16,6 +16,7 @@ export interface FileListProps {
   isSharedByMe?: boolean;
   emptyTitle?: string;
   emptyDescription?: string;
+  emptyAction?: React.ReactNode;
 }
 
 const getTimelineCategory = (dateStr: string): string => {
@@ -47,6 +48,7 @@ export const FileList: React.FC<FileListProps> = ({
   isSharedByMe = false,
   emptyTitle = 'No documents yet',
   emptyDescription = 'Drag and drop files here, or use the Upload button to get started.',
+  emptyAction,
 }) => {
   if (isLoading) {
     return (
@@ -70,6 +72,7 @@ export const FileList: React.FC<FileListProps> = ({
         <p className="font-body-md text-secondary mt-1 select-none">
           {emptyDescription}
         </p>
+        {emptyAction && <div className="mt-5">{emptyAction}</div>}
       </div>
     );
   }

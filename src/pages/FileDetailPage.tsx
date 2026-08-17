@@ -111,9 +111,35 @@ export const FileDetailPage: React.FC = () => {
   const blobUrlRef = useRef<string | null>(null);
   const saveInProgressRef = useRef(false);
   const removeInProgressRef = useRef(false);
+  const offlinePanelRef = useRef<HTMLDivElement>(null);
+  const offlineDragOffsetRef = useRef({ x: 0, y: 0 });
+  const [offlinePanelPosition, setOfflinePanelPosition] = useState<{ x: number; y: number } | null>(null);
 
   const isLoggedIn = !!localStorage.getItem('token');
   const currentUserId = Number(localStorage.getItem('userId')) || null;
+
+  const handleOfflineDragStart = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const panel = offlinePanelRef.current;
+    const container = panel?.parentElement;
+    if (!panel || !container) return;
+    const panelRect = panel.getBoundingClientRect();
+    offlineDragOffsetRef.current = { x: event.clientX - panelRect.left, y: event.clientY - panelRect.top };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handleOfflineDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+    const panel = offlinePanelRef.current;
+    const container = panel?.parentElement;
+    if (!panel || !container) return;
+    const bounds = container.getBoundingClientRect();
+    const maxX = Math.max(8, bounds.width - panel.offsetWidth - 8);
+    const maxY = Math.max(8, bounds.height - panel.offsetHeight - 8);
+    setOfflinePanelPosition({
+      x: Math.min(maxX, Math.max(8, event.clientX - bounds.left - offlineDragOffsetRef.current.x)),
+      y: Math.min(maxY, Math.max(8, event.clientY - bounds.top - offlineDragOffsetRef.current.y)),
+    });
+  };
 
   const replaceLocalBlobUrl = (nextUrl: string | null) => {
     if (blobUrlRef.current) {
@@ -638,7 +664,6 @@ export const FileDetailPage: React.FC = () => {
           onToggleChat={canUseOnlineChat ? () => setIsChatOpen(!isChatOpen) : undefined}
         />
 
-        {/* Chat nháº­n Ä‘Ãºng documentId, tÃªn file vÃ  tráº¡ng thÃ¡i tá»« metadata Ä‘á»ƒ cháº¡y single-document RAG. */}
         {isChatOpen && canUseOnlineChat && (
           <ChatErrorBoundary onClose={() => setIsChatOpen(false)}>
             <DocumentChat
@@ -649,7 +674,21 @@ export const FileDetailPage: React.FC = () => {
             />
           </ChatErrorBoundary>
         )}
-        {isLoggedIn && <div className="absolute right-4 bottom-4 z-20 flex items-center gap-2 rounded-lg border border-outline-variant bg-surface px-3 py-2 shadow-lg">
+        {isLoggedIn && <div
+          ref={offlinePanelRef}
+          style={offlinePanelPosition ? { left: offlinePanelPosition.x, top: offlinePanelPosition.y } : undefined}
+          className={`absolute z-20 flex max-w-[calc(100%-1rem)] items-center gap-2 rounded-lg border border-outline-variant bg-surface px-2 py-2 shadow-lg ${offlinePanelPosition ? '' : 'right-4 bottom-4'}`}
+        >
+          <button
+            type="button"
+            onPointerDown={handleOfflineDragStart}
+            onPointerMove={handleOfflineDrag}
+            className="grid h-8 w-7 shrink-0 touch-none cursor-move place-items-center rounded text-secondary hover:bg-surface-container"
+            title="Drag to move"
+            aria-label="Move offline controls"
+          >
+            <span className="material-symbols-outlined text-[18px]">drag_indicator</span>
+          </button>
           <div className="flex flex-col gap-0.5">
             <span className={`font-body-md text-sm ${isOfflineSaved ? 'text-primary' : 'text-secondary'}`}>
               {isOfflineSaved ? 'Available Offline' : isOnline ? 'Online only' : 'Offline'}

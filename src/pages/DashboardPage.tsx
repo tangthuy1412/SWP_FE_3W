@@ -1720,9 +1720,26 @@ export const DashboardPage: React.FC = () => {
                             ? "Public documents from the community will appear here."
                             : undefined
                   }
+                  emptyAction={currentFolderId !== null && !isFilterModeActive ? (
+                    <Button variant="primary" size="sm" onClick={handleUploadFile} className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[18px]">upload_file</span>
+                      Upload to this folder
+                    </Button>
+                  ) : undefined}
                 />
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {filteredFiles.length === 0 && currentFolderId !== null && !isFilterModeActive && (
+                    <div className="col-span-full flex flex-col items-center justify-center rounded-xl border border-dashed border-outline-variant/60 bg-surface py-20">
+                      <span className="material-symbols-outlined mb-3 text-[48px] text-secondary/50">folder_open</span>
+                      <h4 className="font-semibold text-on-surface">This folder is empty</h4>
+                      <p className="mt-1 text-sm text-secondary">Upload the first document to start organizing this folder.</p>
+                      <Button variant="primary" size="sm" onClick={handleUploadFile} className="mt-5 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[18px]">upload_file</span>
+                        Upload to this folder
+                      </Button>
+                    </div>
+                  )}
                   {filteredFiles.map((file) => {
                     const iconInfo = getFileIconDetails(file.name, file.type);
                     return (
