@@ -21,9 +21,11 @@ export const navigationSections: { label: string; items: NavigationItem[] }[] = 
     items: [
       { name: 'AI Assistant', icon: 'smart_toy', adminOnly: true },
       { name: 'Friends', icon: 'person_add', badge: 'friends' },
+      { name: 'My Approvals', icon: 'fact_check' },
       { name: 'Starred', icon: 'star' },
       { name: 'Trash', icon: 'delete' },
       { name: 'Admin', icon: 'admin_panel_settings', adminOnly: true },
+      { name: 'Review Approvals', icon: 'rule', adminOnly: true },
     ],
   },
 ];

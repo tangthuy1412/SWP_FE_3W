@@ -95,6 +95,7 @@ export const FileDetailPage: React.FC = () => {
     uploadedAt?: string;
     accessScope?: 'owned' | 'shared' | 'public';
   } | null>(null);
+  
   const [storage, setStorage] = useState<StorageUsage | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   // Keep the document preview independent from AI initialization. The user opens chat when needed.
@@ -387,6 +388,7 @@ export const FileDetailPage: React.FC = () => {
             uploadedAt: doc.uploadedAt,
             accessScope: isSharedDoc ? 'shared' : isPublicDoc ? 'public' : 'owned',
           });
+          // approval status checks removed
           setIsOfflineSaved(currentUserId ? await isOfflineDocumentSaved(doc.documentId, currentUserId) : false);
           setIsLoading(false);
           return;
@@ -736,6 +738,7 @@ export const FileDetailPage: React.FC = () => {
             onVisibilityChange={(isPublic) => {
               setDocumentDetails((prev) => (prev ? { ...prev, isPublic } : null));
             }}
+            
           />
 
           <SaveToFolderModal

@@ -52,6 +52,7 @@ function App() {
 
           <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/approvals" element={<DashboardPage />} />
           {/* Route mở màn hình chi tiết tài liệu, nơi người dùng có thể preview và hỏi AI về đúng tài liệu đó. */}
           <Route path="/document/:id" element={<FileDetailPage />} />
           <Route path="/offline-documents" element={<OfflineDocumentsPage />} />

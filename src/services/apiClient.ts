@@ -23,7 +23,6 @@ export const apiClient = {
       headers.set('Content-Type', 'application/json');
     }
 
-    // Gắn JWT hiện tại để backend xác định user và kiểm tra quyền truy cập document/chat.
     const token = localStorage.getItem('token');
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);

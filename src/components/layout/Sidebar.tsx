@@ -168,19 +168,30 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
 
         <div className="border-t border-outline-variant/70 pt-4 px-1">
           {!collapsed && <div className="hidden lg:block text-[10px] uppercase tracking-[0.16em] text-secondary font-semibold mb-2 px-2">Workspace</div>}
-          {role === 'ADMIN' && <button
-            type="button"
-            title={collapsed ? 'AI Assistant' : undefined}
-            onClick={() => handleTabClick('AI Assistant')}
-            className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ease-in-out cursor-pointer ${collapsed ? 'justify-center' : ''} ${
-              activeTab === 'AI Assistant'
-                ? 'bg-primary-fixed/75 text-primary font-semibold'
-                : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[20px]">smart_toy</span>
-            {!collapsed && <span className="hidden lg:inline font-label-md text-label-md">AI Assistant</span>}
-          </button>}
+          {role === 'ADMIN' && (
+            <>
+              {(['AI Assistant', 'Admin', 'Review Approvals'] as const).map((itemName) => {
+                const item = navigationSections[1].items.find((entry) => entry.name === itemName);
+                if (!item) return null;
+                return (
+                  <button
+                    key={itemName}
+                    type="button"
+                    title={collapsed ? itemName : undefined}
+                    onClick={() => handleTabClick(itemName)}
+                    className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ease-in-out cursor-pointer ${collapsed ? 'justify-center' : ''} ${
+                      activeTab === itemName
+                        ? 'bg-primary-fixed/75 text-primary font-semibold'
+                        : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
+                    {!collapsed && <span className="hidden lg:inline font-label-md text-label-md">{itemName}</span>}
+                  </button>
+                );
+              })}
+            </>
+          )}
           <div className="mt-1 space-y-1">
             {secondaryNav.map((item) => {
               const isActive = activeTab === item.name;
@@ -206,12 +217,6 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
               );
             })}
           </div>
-          {role === 'ADMIN' && (
-            <button type="button" title={collapsed ? 'Admin' : undefined} onClick={() => handleTabClick('Admin')} className={`mt-1 w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${collapsed ? 'justify-center' : ''} ${activeTab === 'Admin' ? 'bg-primary-fixed/75 text-primary font-semibold' : 'text-on-surface-variant hover:bg-surface-container-low'}`}>
-              <span className="material-symbols-outlined text-[20px]">admin_panel_settings</span>
-              {!collapsed && <span className="hidden lg:inline font-label-md">Admin</span>}
-            </button>
-          )}
         </div>
       </nav>
 
