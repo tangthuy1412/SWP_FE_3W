@@ -112,9 +112,13 @@ export const ShareApprovalsView: React.FC<ShareApprovalsViewProps> = ({ isAdmin 
   };
 
   const handleReview = async (approval: DocumentShareApproval, status: "APPROVED" | "REJECTED") => {
-    setActionId(approval.documentId);
+    setActionId(approval.approvalId);
     try {
-      const response = await documentService.reviewDocumentShareApproval(approval.documentId, status);
+      const response = await documentService.reviewDocumentShareApproval(
+        approval.documentId,
+        status,
+        approval.shareType,
+      );
       if (response.data?.success) {
         toast.success(`Share request ${status === "APPROVED" ? "approved" : "rejected"}.`);
         setRefreshToken((value) => value + 1);
@@ -217,8 +221,8 @@ export const ShareApprovalsView: React.FC<ShareApprovalsViewProps> = ({ isAdmin 
                           variant="primary"
                           size="sm"
                           leftIcon="check"
-                          disabled={approval.status !== "PENDING_APPROVAL" || actionId === approval.documentId}
-                          isLoading={actionId === approval.documentId}
+                          disabled={approval.status !== "PENDING_APPROVAL" || actionId === approval.approvalId}
+                          isLoading={actionId === approval.approvalId}
                           onClick={() => handleReview(approval, "APPROVED")}
                         >
                           Approve
@@ -227,7 +231,7 @@ export const ShareApprovalsView: React.FC<ShareApprovalsViewProps> = ({ isAdmin 
                           variant="danger"
                           size="sm"
                           leftIcon="close"
-                          disabled={approval.status !== "PENDING_APPROVAL" || actionId === approval.documentId}
+                          disabled={approval.status !== "PENDING_APPROVAL" || actionId === approval.approvalId}
                           onClick={() => handleReview(approval, "REJECTED")}
                         >
                           Reject

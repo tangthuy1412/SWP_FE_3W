@@ -85,6 +85,11 @@ export const FileListItem: React.FC<FileListItemProps> = ({
     READY: { label: 'Ready', detail: 'Ready to chat and share', icon: 'check_circle', classes: 'text-success bg-success-container/40' },
     FAILED: { label: 'Failed', detail: 'Processing failed; upload again', icon: 'error', classes: 'text-error bg-error-container/40' },
   }[item.processingStatus] : null;
+  const approvalInfo = item.shareApprovalStatus && item.shareApprovalStatus !== 'UNREVIEWED' ? {
+    PENDING_APPROVAL: { label: 'Share pending', detail: 'Waiting for admin approval', icon: 'pending_actions', classes: 'text-tertiary bg-tertiary-fixed/30' },
+    APPROVED: { label: 'Share approved', detail: 'Approved sharing methods are active', icon: 'verified', classes: 'text-success bg-success-container/40' },
+    REJECTED: { label: 'Share rejected', detail: 'The latest sharing request was rejected', icon: 'block', classes: 'text-error bg-error-container/40' },
+  }[item.shareApprovalStatus] : null;
 
   return (
     <div
@@ -134,6 +139,13 @@ export const FileListItem: React.FC<FileListItemProps> = ({
           </span>
         )}
 
+        {type === 'file' && approvalInfo && (
+          <span className={`hidden shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold lg:inline-flex ${approvalInfo.classes}`} title={approvalInfo.detail}>
+            <span className="material-symbols-outlined text-[14px]">{approvalInfo.icon}</span>
+            {approvalInfo.label}
+          </span>
+        )}
+
         {/* Unread indicator for shared files */}
         {isShared && item.isUnread && (
           <span
@@ -149,7 +161,11 @@ export const FileListItem: React.FC<FileListItemProps> = ({
         {type === 'file' && (
           <span 
             className="material-symbols-outlined text-[15px] text-secondary select-none shrink-0"
-            title={isPublic ? 'Public Document' : 'Private Document'}
+            title={isPublic
+              ? item.shareApprovalStatus === 'PENDING_APPROVAL'
+                ? 'Public access is pending admin approval'
+                : 'Public Document'
+              : 'Private Document'}
           >
             {isPublic ? 'public' : 'lock'}
           </span>

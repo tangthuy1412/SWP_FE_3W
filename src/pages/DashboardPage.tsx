@@ -7,6 +7,7 @@ import { documentService } from "../services/documentService";
 import type {
   DocumentUploadResponse,
   DocumentFilterSort,
+  ShareApprovalStatus,
 } from "../services/documentService";
 import { tagService } from "../services/tagService";
 import type { TagResponse } from "../services/tagService";
@@ -129,6 +130,7 @@ export const DashboardPage: React.FC = () => {
     id: number;
     name: string;
     isPublic: boolean;
+    shareApprovalStatus?: ShareApprovalStatus;
   } | null>(null);
 
   // Multi-selection state
@@ -698,6 +700,7 @@ export const DashboardPage: React.FC = () => {
       sharedWith: doc.sharedWith,
       shareCount: doc.shareCount,
       processingStatus: doc.status,
+      shareApprovalStatus: doc.shareApprovalStatus,
     };
   };
 
@@ -1180,9 +1183,11 @@ export const DashboardPage: React.FC = () => {
           newVisibility,
         );
         if (response.data && response.data.success) {
-          alert(
-            `Document visibility changed to ${newVisibility ? "Public" : "Private"} successfully!`,
-          );
+          if (newVisibility) {
+            alert("Public sharing request submitted. The document will appear in Community after admin approval.");
+          } else {
+            alert("Document is now Private.");
+          }
           fetchFiles();
         } else {
           alert(
@@ -1203,6 +1208,7 @@ export const DashboardPage: React.FC = () => {
           id: numericId,
           name: item.name,
           isPublic: !!item.isPublic,
+          shareApprovalStatus: item.shareApprovalStatus,
         });
         setIsShareModalOpen(true);
       } else {
@@ -1772,14 +1778,18 @@ export const DashboardPage: React.FC = () => {
                             {/* Visibility indicator in Grid View */}
                             {file.type === "file" && (
                               <span
-                                className="text-secondary material-symbols-outlined text-[16px] select-none mr-1"
+                                className={`${file.shareApprovalStatus === "PENDING_APPROVAL" ? "text-tertiary" : "text-secondary"} material-symbols-outlined text-[16px] select-none mr-1`}
                                 title={
-                                  file.isPublic
+                                  file.shareApprovalStatus === "PENDING_APPROVAL"
+                                    ? "Sharing request pending admin approval"
+                                    : file.isPublic
                                     ? "Public Document"
                                     : "Private Document"
                                 }
                               >
-                                {file.isPublic ? "public" : "lock"}
+                                {file.shareApprovalStatus === "PENDING_APPROVAL"
+                                  ? "pending_actions"
+                                  : file.isPublic ? "public" : "lock"}
                               </span>
                             )}
 
@@ -1970,8 +1980,9 @@ export const DashboardPage: React.FC = () => {
           documentId={shareTarget.id}
           documentName={shareTarget.name}
           isInitiallyPublic={shareTarget.isPublic}
-          onVisibilityChange={(isPublic) => {
-            setShareTarget((prev) => (prev ? { ...prev, isPublic } : null));
+          initialApprovalStatus={shareTarget.shareApprovalStatus}
+          onApprovalStatusChange={(shareApprovalStatus) => {
+            setShareTarget((prev) => (prev ? { ...prev, shareApprovalStatus } : null));
           }}
         />
       )}

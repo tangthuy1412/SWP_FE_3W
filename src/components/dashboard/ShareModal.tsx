@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { documentService } from '../../services/documentService';
+import type {
+  DocumentShareApprovalType,
+  ShareApprovalStatus,
+} from '../../services/documentService';
 import { friendService } from '../../services/friendService';
 import type { FriendResponse } from '../../services/friendService';
 import { useConfirm } from '../../contexts/ConfirmContext';
@@ -10,7 +14,8 @@ export interface ShareModalProps {
   documentId: number;
   documentName: string;
   isInitiallyPublic: boolean;
-  onVisibilityChange?: (isPublic: boolean) => void;
+  initialApprovalStatus?: ShareApprovalStatus;
+  onApprovalStatusChange?: (status: ShareApprovalStatus) => void;
 }
 
 interface ExistingShare {
@@ -20,21 +25,30 @@ interface ExistingShare {
   createdAt?: string;
 }
 
+const approvalStatusDetails: Record<ShareApprovalStatus, { label: string; classes: string }> = {
+  UNREVIEWED: { label: 'Not submitted', classes: 'bg-surface-container-high text-secondary' },
+  PENDING_APPROVAL: { label: 'Pending admin approval', classes: 'bg-tertiary-fixed/30 text-tertiary' },
+  APPROVED: { label: 'Approved', classes: 'bg-success-container/40 text-success' },
+  REJECTED: { label: 'Rejected', classes: 'bg-error-container/40 text-error' },
+};
+
 export const ShareModal: React.FC<ShareModalProps> = ({
   isOpen,
   onClose,
   documentId,
   documentName,
   isInitiallyPublic,
-  onVisibilityChange,
+  initialApprovalStatus,
+  onApprovalStatusChange,
 }) => {
   const confirmAction = useConfirm();
   const [activeTab, setActiveTab] = useState<'link' | 'friends'>('link');
   const [friends, setFriends] = useState<FriendResponse[]>([]);
-  const [isLinkSharingEnabled, setIsLinkSharingEnabled] = useState(isInitiallyPublic);
+  const [isLinkSharingEnabled, setIsLinkSharingEnabled] = useState(false);
   const [shareToken, setShareToken] = useState<string | null>(null);
   const [isLoadingLink, setIsLoadingLink] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [approvalStatuses, setApprovalStatuses] = useState<Partial<Record<DocumentShareApprovalType, ShareApprovalStatus>>>({});
   
   // Direct sharing states
   const [friendSearch, setFriendSearch] = useState('');
@@ -46,38 +60,30 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const [existingShares, setExistingShares] = useState<ExistingShare[]>([]);
   const [isLoadingShares, setIsLoadingShares] = useState(false);
 
-  const fetchOrCreateShareLink = React.useCallback(async () => {
-    setIsLoadingLink(true);
-    try {
-      const response = await documentService.createShareLink(documentId);
-      if (response.data && response.data.success) {
-        setShareToken(response.data.data.token);
-      }
-    } catch (e) {
-      console.error('Failed to create/retrieve share link:', e);
-    } finally {
-      setIsLoadingLink(false);
-    }
-  }, [documentId]);
-
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (isOpen) {
-      setIsLinkSharingEnabled(isInitiallyPublic);
+      setIsLinkSharingEnabled(false);
       setShareToken(null);
       setCopySuccess(false);
       setFriendSearch('');
       setCustomEmail('');
       setDirectShareStatus(null);
       setExistingShares([]);
+      setApprovalStatuses(
+        isInitiallyPublic && initialApprovalStatus
+          ? { PUBLIC: initialApprovalStatus }
+          : {},
+      );
       
       // Load friends list and existing shares for direct sharing
       const loadInitialData = async () => {
         setIsLoadingShares(true);
         try {
-          const [friendsRes, sharesRes] = await Promise.all([
+          const [friendsRes, sharesRes, approvalsRes] = await Promise.all([
             friendService.getFriends().catch(() => null),
             documentService.getDocumentShares(documentId).catch(() => null),
+            documentService.getMyDocumentShareApprovals({ size: 100 }).catch(() => null),
           ]);
 
           if (friendsRes?.data && friendsRes.data.success) {
@@ -94,6 +100,21 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               }))
             );
           }
+
+          if (approvalsRes?.data?.success) {
+            const documentApprovals = (approvalsRes.data.data.content || [])
+              .filter((approval) => approval.documentId === documentId);
+            const statuses = documentApprovals.reduce<Partial<Record<DocumentShareApprovalType, ShareApprovalStatus>>>(
+              (result, approval) => ({ ...result, [approval.shareType]: approval.status }),
+              isInitiallyPublic && initialApprovalStatus
+                ? { PUBLIC: initialApprovalStatus }
+                : {},
+            );
+            setApprovalStatuses(statuses);
+            setIsLinkSharingEnabled(
+              !!statuses.LINK && statuses.LINK !== 'REJECTED',
+            );
+          }
         } catch (e) {
           console.error('Failed to load modal data:', e);
         } finally {
@@ -101,13 +122,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         }
       };
       loadInitialData();
-
-      // If initially public, we can call createShareLink or wait. Let's fetch the link if enabled.
-      if (isInitiallyPublic) {
-        fetchOrCreateShareLink();
-      }
     }
-  }, [isOpen, documentId, isInitiallyPublic, fetchOrCreateShareLink]);
+  }, [isOpen, documentId, isInitiallyPublic, initialApprovalStatus]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   if (!isOpen) return null;
@@ -122,16 +138,17 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         if (response.data && response.data.success) {
           setShareToken(response.data.data.token);
           setIsLinkSharingEnabled(true);
-          if (onVisibilityChange) onVisibilityChange(true);
+          setApprovalStatuses((current) => ({ ...current, LINK: 'PENDING_APPROVAL' }));
+          onApprovalStatusChange?.('PENDING_APPROVAL');
         } else {
-          alert('Failed to enable link sharing: ' + (response.error || 'Server error'));
+          alert('Failed to submit link sharing request: ' + (response.error || 'Server error'));
         }
       } else {
         const response = await documentService.disableShareLink(documentId);
         if (response.data && response.data.success) {
           setShareToken(null);
           setIsLinkSharingEnabled(false);
-          if (onVisibilityChange) onVisibilityChange(false);
+          setApprovalStatuses((current) => ({ ...current, LINK: undefined }));
         } else {
           alert('Failed to disable link sharing: ' + (response.error || 'Server error'));
         }
@@ -174,8 +191,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         const shareData = response.data.data;
         setDirectShareStatus({
           type: 'success',
-          message: `Shared successfully with ${targetEmail}!`,
+          message: `Share request sent for ${targetEmail}. Access starts after admin approval.`,
         });
+        setApprovalStatuses((current) => ({ ...current, DIRECT: 'PENDING_APPROVAL' }));
+        onApprovalStatusChange?.('PENDING_APPROVAL');
         setCustomEmail('');
         
         // Add or update in existing shares
@@ -221,8 +240,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         const shareData = response.data.data;
         setDirectShareStatus({
           type: 'success',
-          message: `Shared successfully with ${friend.fullName}!`,
+          message: `Share request sent for ${friend.fullName}. Access starts after admin approval.`,
         });
+        setApprovalStatuses((current) => ({ ...current, DIRECT: 'PENDING_APPROVAL' }));
+        onApprovalStatusChange?.('PENDING_APPROVAL');
         
         // Add to existing shares
         setExistingShares((prev) => [
@@ -259,6 +280,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   );
 
   const shareUrl = shareToken ? `${window.location.origin}/share/${shareToken}` : '';
+  const linkApprovalStatus = approvalStatuses.LINK;
+  const directApprovalStatus = approvalStatuses.DIRECT;
+  const linkInputValue = isLoadingLink
+    ? 'Creating link request...'
+    : shareUrl || (linkApprovalStatus === 'APPROVED'
+      ? 'Link approved. The original link is active.'
+      : 'Link request is waiting for admin approval.');
 
   return (
     <div className="fixed inset-0 bg-black/45 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
@@ -319,10 +347,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               <div className="flex items-center justify-between bg-surface-container rounded-xl p-4 border border-surface-variant/40">
                 <div className="mr-4">
                   <h4 className="font-label-md text-label-md font-bold text-on-surface select-none">
-                    Link Sharing
+                    Link Sharing Request
                   </h4>
                   <p className="text-secondary text-body-sm mt-0.5 select-none">
-                    Anyone with this link can view and download this file.
+                    After admin approval, anyone with this link can view and download the file.
                   </p>
                 </div>
                 
@@ -341,15 +369,23 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
               {isLinkSharingEnabled && (
                 <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                  {linkApprovalStatus && (
+                    <div className="flex items-center justify-between gap-3 rounded-lg border border-outline-variant/60 bg-surface-container-low px-3 py-2 text-xs">
+                      <span className="text-secondary">Link access</span>
+                      <span className={`rounded-full px-2 py-1 font-semibold ${approvalStatusDetails[linkApprovalStatus].classes}`}>
+                        {approvalStatusDetails[linkApprovalStatus].label}
+                      </span>
+                    </div>
+                  )}
                   <div className="space-y-1">
                     <span className="font-label-md text-label-md text-secondary select-none">
-                      Shared Link
+                      {shareToken ? 'Shared Link' : 'Link status'}
                     </span>
                     <div className="flex rounded-lg border border-surface-variant bg-surface-container-high overflow-hidden transition-all">
                       <input
                         type="text"
                         readOnly
-                        value={isLoadingLink ? 'Generating link...' : shareUrl}
+                        value={linkInputValue}
                         className="flex-1 h-11 bg-transparent px-4 text-body-md focus:outline-none font-mono text-xs select-all text-secondary"
                       />
                       <button
@@ -374,7 +410,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  <span>Updating sharing permissions...</span>
+                  <span>Updating link request...</span>
                 </div>
               )}
             </div>
@@ -383,6 +419,14 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           {/* TAB 2: SHARE WITH FRIENDS */}
           {activeTab === 'friends' && (
             <div className="space-y-4">
+              {directApprovalStatus && (
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-outline-variant/60 bg-surface-container-low px-3 py-2 text-xs">
+                  <span className="text-secondary">Direct share access</span>
+                  <span className={`rounded-full px-2 py-1 font-semibold ${approvalStatusDetails[directApprovalStatus].classes}`}>
+                    {approvalStatusDetails[directApprovalStatus].label}
+                  </span>
+                </div>
+              )}
               
               {/* Direct email share input */}
               <form onSubmit={handleDirectShareSubmit} className="flex gap-2">

@@ -17,6 +17,7 @@ export interface FileItem {
   sharedWith?: string;
   shareCount?: number;
   processingStatus?: 'UPLOADED' | 'PARSING' | 'INDEXING' | 'READY' | 'FAILED';
+  shareApprovalStatus?: 'UNREVIEWED' | 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
 }
 
 export interface SuggestedItem {

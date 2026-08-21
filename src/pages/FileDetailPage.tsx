@@ -9,6 +9,7 @@ import SaveToFolderModal from '../components/dashboard/SaveToFolderModal';
 import { folderService } from '../services/folderService';
 import type { DocumentFolderResponse } from '../services/folderService';
 import { documentService } from '../services/documentService';
+import type { ShareApprovalStatus } from '../services/documentService';
 import { isOfflinePreviewSupported, offlineDocumentService } from '../services/offlineDocumentService';
 import { deleteOfflineDocument, getOfflineDocument, isOfflineDocumentSaved } from '../lib/offlineDocumentDb';
 import { markSharedDocAsRead } from '../lib/sharedDocReadDb';
@@ -94,6 +95,7 @@ export const FileDetailPage: React.FC = () => {
     fileSizeBytes?: number;
     uploadedAt?: string;
     accessScope?: 'owned' | 'shared' | 'public';
+    shareApprovalStatus?: ShareApprovalStatus;
   } | null>(null);
   const [storage, setStorage] = useState<StorageUsage | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
@@ -356,6 +358,7 @@ export const FileDetailPage: React.FC = () => {
             fileSizeBytes: doc.fileSize,
             uploadedAt: doc.uploadedAt,
             accessScope: isSharedDoc ? 'shared' : isPublicDoc ? 'public' : 'owned',
+            shareApprovalStatus: doc.shareApprovalStatus,
           });
           setIsOfflineSaved(currentUserId ? await isOfflineDocumentSaved(doc.documentId, currentUserId) : false);
           setIsLoading(false);
@@ -418,8 +421,15 @@ export const FileDetailPage: React.FC = () => {
     try {
       const response = await documentService.updateDocumentVisibility(documentDetails.id, nextPublicState);
       if (response.data && response.data.success) {
-        setDocumentDetails((prev) => (prev ? { ...prev, isPublic: nextPublicState } : null));
-        alert(nextPublicState ? 'Document is now Publicly visible in Community!' : 'Document is now Private!');
+        const updatedDocument = response.data.data;
+        setDocumentDetails((prev) => (prev ? {
+          ...prev,
+          isPublic: updatedDocument.isPublic,
+          shareApprovalStatus: updatedDocument.shareApprovalStatus,
+        } : null));
+        alert(nextPublicState
+          ? 'Public sharing request submitted. The document will appear in Community after admin approval.'
+          : 'Document is now Private.');
       } else {
         alert(response.error || 'Failed to update document visibility.');
       }
@@ -689,8 +699,9 @@ export const FileDetailPage: React.FC = () => {
             documentId={documentDetails.id}
             documentName={documentDetails.name}
             isInitiallyPublic={documentDetails.isPublic || false}
-            onVisibilityChange={(isPublic) => {
-              setDocumentDetails((prev) => (prev ? { ...prev, isPublic } : null));
+            initialApprovalStatus={documentDetails.shareApprovalStatus}
+            onApprovalStatusChange={(shareApprovalStatus) => {
+              setDocumentDetails((prev) => (prev ? { ...prev, shareApprovalStatus } : null));
             }}
           />
 

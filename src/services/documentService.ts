@@ -212,9 +212,12 @@ export const documentService = {
   async reviewDocumentShareApproval(
     documentId: number,
     status: Extract<ShareApprovalStatus, "APPROVED" | "REJECTED">,
+    shareType?: DocumentShareApprovalType,
   ): Promise<ApiResponse<BackendResponse<DocumentUploadResponse>>> {
+    const query = new URLSearchParams({ status });
+    if (shareType) query.set("shareType", shareType);
     return apiClient.request<BackendResponse<DocumentUploadResponse>>(
-      `/documents/${documentId}/share-approval?status=${status}`,
+      `/documents/${documentId}/share-approval?${query.toString()}`,
       { method: "PATCH" },
     );
   },
