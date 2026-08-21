@@ -14,8 +14,52 @@ export interface DocumentUploadResponse {
   isDeleted: boolean;
   isStarred: boolean;
   status: "UPLOADED" | "PARSING" | "INDEXING" | "READY" | "FAILED";
+  shareApprovalStatus?: ShareApprovalStatus;
   uploadedAt: string;
   deletedAt: string | null;
+}
+
+export type ShareApprovalStatus =
+  | "UNREVIEWED"
+  | "PENDING_APPROVAL"
+  | "APPROVED"
+  | "REJECTED";
+
+export type DocumentShareApprovalType = "PUBLIC" | "LINK" | "DIRECT";
+
+export interface DocumentShareApproval {
+  approvalId: number;
+  documentId: number;
+  documentName: string;
+  ownerId?: number;
+  ownerEmail?: string | null;
+  shareType: DocumentShareApprovalType;
+  status: ShareApprovalStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DocumentShareApprovalPage {
+  content: DocumentShareApproval[];
+  pageable?: {
+    pageNumber?: number;
+    pageSize?: number;
+  };
+  totalElements: number;
+  totalPages: number;
+  first?: boolean;
+  last?: boolean;
+  number: number;
+  size: number;
+  empty: boolean;
+}
+
+export interface DocumentShareApprovalQuery {
+  status?: ShareApprovalStatus;
+  shareType?: DocumentShareApprovalType;
+  page?: number;
+  size?: number;
+  sort?: string;
 }
 
 export interface BackendResponse<T> {
@@ -72,6 +116,7 @@ export interface DocumentShareResponse {
   sharedWithName: string;
   createdAt: string;
 }
+
 
 export const documentService = {
   async getMyDocuments(): Promise<
@@ -147,6 +192,44 @@ export const documentService = {
     return apiClient.request<BackendResponse<DocumentUploadResponse>>(
       `/documents/${documentId}/visibility?isPublic=${isPublic}`,
       { method: "PATCH" },
+    );
+  },
+
+  async getAdminDocumentShareApprovals(
+    params: DocumentShareApprovalQuery = {},
+  ): Promise<ApiResponse<BackendResponse<DocumentShareApprovalPage>>> {
+    const query = new URLSearchParams();
+    query.set("status", params.status || "PENDING_APPROVAL");
+    if (params.shareType) query.set("shareType", params.shareType);
+    query.set("page", String(params.page ?? 0));
+    query.set("size", String(params.size ?? 10));
+    query.set("sort", params.sort || "createdAt,asc");
+    return apiClient.get<BackendResponse<DocumentShareApprovalPage>>(
+      `/documents/document-share-approvals?${query.toString()}`,
+    );
+  },
+
+  async reviewDocumentShareApproval(
+    documentId: number,
+    status: Extract<ShareApprovalStatus, "APPROVED" | "REJECTED">,
+  ): Promise<ApiResponse<BackendResponse<DocumentUploadResponse>>> {
+    return apiClient.request<BackendResponse<DocumentUploadResponse>>(
+      `/documents/${documentId}/share-approval?status=${status}`,
+      { method: "PATCH" },
+    );
+  },
+
+  async getMyDocumentShareApprovals(
+    params: DocumentShareApprovalQuery = {},
+  ): Promise<ApiResponse<BackendResponse<DocumentShareApprovalPage>>> {
+    const query = new URLSearchParams();
+    if (params.status) query.set("status", params.status);
+    if (params.shareType) query.set("shareType", params.shareType);
+    query.set("page", String(params.page ?? 0));
+    query.set("size", String(params.size ?? 20));
+    query.set("sort", params.sort || "createdAt,desc");
+    return apiClient.get<BackendResponse<DocumentShareApprovalPage>>(
+      `/documents/my/document-share-approvals?${query.toString()}`,
     );
   },
 
@@ -296,6 +379,7 @@ export const documentService = {
       `/documents/${documentId}/share-link`,
     );
   },
+
 
   async disableShareLink(
     documentId: number,

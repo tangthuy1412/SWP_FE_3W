@@ -27,6 +27,7 @@ import AiAssistantConfigView from "../components/dashboard/AiAssistantConfigView
 import SmartChatView from "../components/dashboard/SmartChatView";
 import ShareModal from "../components/dashboard/ShareModal";
 import AdminPlansView from "../components/dashboard/AdminPlansView";
+import ShareApprovalsView from "../components/dashboard/ShareApprovalsView";
 import DocumentChat from "../components/document/DocumentChat";
 import { getFileIconDetails } from "../lib/fileHelpers";
 import { saveKnownUser, resolveOwnerEmail } from "../lib/userHelpers";
@@ -75,8 +76,11 @@ export const DashboardPage: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState(() => {
-    const requestedTab = navigationState?.activeTab || sessionStorage.getItem("dashboardActiveTab") || "My Files";
-    return (requestedTab === "AI Assistant" || requestedTab === "Admin") && localStorage.getItem("userRole") !== "ADMIN"
+    const approvalRouteTab = location.pathname === "/approvals"
+      ? (localStorage.getItem("userRole") === "ADMIN" ? "Review Approvals" : "My Approvals")
+      : null;
+    const requestedTab = approvalRouteTab || navigationState?.activeTab || sessionStorage.getItem("dashboardActiveTab") || "My Files";
+    return (["AI Assistant", "Admin", "Review Approvals"].includes(requestedTab)) && localStorage.getItem("userRole") !== "ADMIN"
       ? "My Files"
       : requestedTab;
   });
@@ -621,7 +625,12 @@ export const DashboardPage: React.FC = () => {
         );
         setApiFiles(docsWithTags);
         setIsFallbackMode(false);
-      } else if (activeTab === "Friends" || activeTab === "Settings") {
+      } else if (
+        activeTab === "Friends" ||
+        activeTab === "Settings" ||
+        activeTab === "My Approvals" ||
+        activeTab === "Review Approvals"
+      ) {
         setApiFiles([]);
         setApiFolders([]);
         setIsLoadingFiles(false);
@@ -890,7 +899,7 @@ export const DashboardPage: React.FC = () => {
 
   // Trigger S3 File Upload Modal
   const handleTabChange = (tabName: string) => {
-    if ((tabName === "AI Assistant" || tabName === "Admin") && !isAdmin) {
+    if ((tabName === "AI Assistant" || tabName === "Admin" || tabName === "Review Approvals") && !isAdmin) {
       setActiveTab("My Files");
       sessionStorage.setItem("dashboardActiveTab", "My Files");
       return;
@@ -1422,6 +1431,10 @@ export const DashboardPage: React.FC = () => {
         <FriendsView />
       ) : activeTab === "Settings" ? (
         <SettingsView />
+      ) : activeTab === "My Approvals" ? (
+        <ShareApprovalsView isAdmin={false} />
+      ) : activeTab === "Review Approvals" && isAdmin ? (
+        <ShareApprovalsView isAdmin />
       ) : activeTab === "AI Assistant" && isAdmin ? (
         <AiAssistantConfigView />
       ) : activeTab === "Smart Chat" ? (
