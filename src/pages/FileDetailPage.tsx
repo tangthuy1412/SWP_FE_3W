@@ -95,7 +95,6 @@ export const FileDetailPage: React.FC = () => {
     uploadedAt?: string;
     accessScope?: 'owned' | 'shared' | 'public';
   } | null>(null);
-  
   const [storage, setStorage] = useState<StorageUsage | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   // Keep the document preview independent from AI initialization. The user opens chat when needed.
@@ -112,35 +111,9 @@ export const FileDetailPage: React.FC = () => {
   const blobUrlRef = useRef<string | null>(null);
   const saveInProgressRef = useRef(false);
   const removeInProgressRef = useRef(false);
-  const offlinePanelRef = useRef<HTMLDivElement>(null);
-  const offlineDragOffsetRef = useRef({ x: 0, y: 0 });
-  const [offlinePanelPosition, setOfflinePanelPosition] = useState<{ x: number; y: number } | null>(null);
 
   const isLoggedIn = !!localStorage.getItem('token');
   const currentUserId = Number(localStorage.getItem('userId')) || null;
-
-  const handleOfflineDragStart = (event: React.PointerEvent<HTMLButtonElement>) => {
-    const panel = offlinePanelRef.current;
-    const container = panel?.parentElement;
-    if (!panel || !container) return;
-    const panelRect = panel.getBoundingClientRect();
-    offlineDragOffsetRef.current = { x: event.clientX - panelRect.left, y: event.clientY - panelRect.top };
-    event.currentTarget.setPointerCapture(event.pointerId);
-  };
-
-  const handleOfflineDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
-    if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
-    const panel = offlinePanelRef.current;
-    const container = panel?.parentElement;
-    if (!panel || !container) return;
-    const bounds = container.getBoundingClientRect();
-    const maxX = Math.max(8, bounds.width - panel.offsetWidth - 8);
-    const maxY = Math.max(8, bounds.height - panel.offsetHeight - 8);
-    setOfflinePanelPosition({
-      x: Math.min(maxX, Math.max(8, event.clientX - bounds.left - offlineDragOffsetRef.current.x)),
-      y: Math.min(maxY, Math.max(8, event.clientY - bounds.top - offlineDragOffsetRef.current.y)),
-    });
-  };
 
   const replaceLocalBlobUrl = (nextUrl: string | null) => {
     if (blobUrlRef.current) {
@@ -180,7 +153,6 @@ export const FileDetailPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Khi má»Ÿ trang, táº£i metadata tÃ i liá»‡u trÆ°á»›c Ä‘á»ƒ DocumentChat biáº¿t documentId vÃ  chá»‰ cho há»i khi status lÃ  READY.
     const loadDetails = async () => {
       setIsLoading(true);
       setOfflineUnavailableMessage(null);
@@ -274,7 +246,6 @@ export const FileDetailPage: React.FC = () => {
       }
 
       if (!isNaN(numericId)) {
-        // Láº¥y chi tiáº¿t tá»« backend; náº¿u tÃ i liá»‡u khÃ´ng thuá»™c user thÃ¬ láº§n lÆ°á»£t thá»­ shared document vÃ  public document.
         let response;
         let isPublicDoc = false;
         let isSharedDoc = false;
@@ -286,13 +257,11 @@ export const FileDetailPage: React.FC = () => {
           try {
             response = await documentService.getDocumentDetail(numericId);
             if (!response.data || !response.data.success) {
-              // Náº¿u khÃ´ng pháº£i document owner thÃ¬ thá»­ document Ä‘Æ°á»£c share cho user.
               const sharedResponse = await documentService.getSharedWithMeDocumentDetail(numericId);
               if (sharedResponse.data && sharedResponse.data.success) {
                 response = sharedResponse;
                 isSharedDoc = true;
               } else {
-                // Fallback cuá»‘i cho document public cá»§a user khÃ¡c, vÃ­ dá»¥ má»Ÿ tá»« community page.
                 const publicResponse = await documentService.getPublicDocumentDetail(numericId);
                 if (publicResponse.data && publicResponse.data.success) {
                   response = publicResponse;
@@ -388,7 +357,6 @@ export const FileDetailPage: React.FC = () => {
             uploadedAt: doc.uploadedAt,
             accessScope: isSharedDoc ? 'shared' : isPublicDoc ? 'public' : 'owned',
           });
-          // approval status checks removed
           setIsOfflineSaved(currentUserId ? await isOfflineDocumentSaved(doc.documentId, currentUserId) : false);
           setIsLoading(false);
           return;
@@ -676,21 +644,7 @@ export const FileDetailPage: React.FC = () => {
             />
           </ChatErrorBoundary>
         )}
-        {isLoggedIn && <div
-          ref={offlinePanelRef}
-          style={offlinePanelPosition ? { left: offlinePanelPosition.x, top: offlinePanelPosition.y } : undefined}
-          className={`absolute z-20 flex max-w-[calc(100%-1rem)] items-center gap-2 rounded-lg border border-outline-variant bg-surface px-2 py-2 shadow-lg ${offlinePanelPosition ? '' : 'right-4 bottom-4'}`}
-        >
-          <button
-            type="button"
-            onPointerDown={handleOfflineDragStart}
-            onPointerMove={handleOfflineDrag}
-            className="grid h-8 w-7 shrink-0 touch-none cursor-move place-items-center rounded text-secondary hover:bg-surface-container"
-            title="Drag to move"
-            aria-label="Move offline controls"
-          >
-            <span className="material-symbols-outlined text-[18px]">drag_indicator</span>
-          </button>
+        {isLoggedIn && <div className="absolute right-4 bottom-4 z-20 flex items-center gap-2 rounded-lg border border-outline-variant bg-surface px-3 py-2 shadow-lg">
           <div className="flex flex-col gap-0.5">
             <span className={`font-body-md text-sm ${isOfflineSaved ? 'text-primary' : 'text-secondary'}`}>
               {isOfflineSaved ? 'Available Offline' : isOnline ? 'Online only' : 'Offline'}
@@ -738,7 +692,6 @@ export const FileDetailPage: React.FC = () => {
             onVisibilityChange={(isPublic) => {
               setDocumentDetails((prev) => (prev ? { ...prev, isPublic } : null));
             }}
-            
           />
 
           <SaveToFolderModal
