@@ -231,14 +231,11 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
     try {
       // 1. Upload the document
-      // Tạo document trước vì việc gắn tag cần documentId được sinh ra.
       const uploadResponse = await documentService.uploadDocument(file, false, folderId);
       if (uploadResponse.data && uploadResponse.data.success) {
         const docId = uploadResponse.data.data.documentId;
         
-        // 2. Link tags sequentially if any are selected
         if (selectedTags.length > 0) {
-          // Gắn tag là các API call riêng vì endpoint upload chỉ tạo metadata tài liệu.
           for (const tag of selectedTags) {
             await tagService.addTagToDocument(docId, tag.tagId);
           }

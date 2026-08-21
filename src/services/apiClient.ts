@@ -3,7 +3,7 @@ import { clearAuthenticatedUser } from '../lib/authStorage';
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
   'https://openaihubstudybe-hchecwhbfmb4cjbd.malaysiawest-01.azurewebsites.net/api';
-
+// 'http://localhost:8080/api'//
 export interface ApiResponse<T> {
   data?: T;
   error?: string;

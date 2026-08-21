@@ -118,6 +118,22 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({
   // Determine if we should show zoom controls
   const showZoomControls = !isUnsupported && !isLegacyDoc && !isVideo && !(isPdf && sourceUrl);
 
+  const renderPreviewUnavailable = (message: string) => (
+    <div className="flex flex-1 items-center justify-center overflow-auto bg-surface-container-low p-container-padding">
+      <div className="mx-4 flex w-full max-w-md flex-col items-center gap-4 rounded-lg border border-outline-variant bg-surface p-8 text-center shadow">
+        <span className="material-symbols-outlined text-[42px] text-secondary">preview_off</span>
+        <div>
+          <h3 className="text-lg font-bold text-on-surface">Preview unavailable</h3>
+          <p className="mt-2 text-sm leading-6 text-secondary">{message}</p>
+        </div>
+        <button type="button" onClick={onDownloadClick} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary">
+          <span className="material-symbols-outlined text-[18px]">download</span>
+          Download original file
+        </button>
+      </div>
+    </div>
+  );
+
   const renderContent = () => {
     // 1. PDF
     if (isPdf) {
@@ -132,65 +148,12 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({
           </div>
         );
       }
-      
-      // Fallback Faux PDF Page for mock data
-      return (
-        <div className="flex-1 overflow-auto p-container-padding bg-surface-container-low flex justify-center custom-scrollbar">
-          <div 
-            className="transition-transform duration-200 origin-top h-fit py-4"
-            style={{ transform: `scale(${zoomLevel / 100})` }}
-          >
-            <div className="bg-surface w-full max-w-3xl min-h-[1056px] shadow-[0px_4px_20px_rgba(0,0,0,0.04)] border border-outline-variant rounded p-12 flex flex-col gap-8 select-text">
-              <header className="border-b-2 border-primary pb-4 mb-4">
-                <h1 className="font-display-lg text-display-lg text-on-surface mb-2">Q3 Strategic Outlook</h1>
-                <p className="font-body-lg text-body-lg text-secondary uppercase tracking-wider">
-                  Confidential - Internal Distribution Only
-                </p>
-              </header>
-              
-              <div className="space-y-6">
-                <div>
-                  <h3 className="font-title-lg text-title-lg text-on-surface mb-2 font-bold">1. Executive Summary</h3>
-                  <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed text-justify">
-                    The third quarter has presented significant opportunities for expansion in the enterprise sector. 
-                    Despite macroeconomic headwinds, our core SaaS products have seen a 14% year-over-year growth. 
-                    This document outlines the strategic pivot towards AI-integrated workflows to capitalize on emerging market demands. 
-                    We anticipate this shift will require a reallocation of 20% of the R&D budget by Q4.
-                  </p>
-                </div>
-
-                <div className="p-6 bg-surface-container rounded-lg border border-surface-container-high relative group transition-all duration-300">
-                  <div className="absolute -left-3 top-6 w-1 h-12 bg-primary rounded-full hidden group-hover:block transition-all animate-fade-in" />
-                  <h3 className="font-title-lg text-title-lg text-on-surface mb-2 font-bold">2. Key Objectives</h3>
-                  <ul className="list-disc pl-5 font-body-md text-body-md text-on-surface-variant space-y-2">
-                    <li>Accelerate deployment of machine learning modules within the Aether platform.</li>
-                    <li>Expand the sales task force in the EMEA region by 15 personnel.</li>
-                    <li>Reduce customer churn by 2% through proactive engagement initiatives.</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="font-title-lg text-title-lg text-on-surface mb-2 font-bold">3. Financial Projections</h3>
-                  <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed mb-4 text-justify">
-                    Revenue targets for Q3 are set aggressively at $42M, representing a strong quarter-over-quarter growth trajectory. 
-                    Margin expansion remains a priority, driven by operational efficiencies in cloud infrastructure.
-                  </p>
-                  
-                  <div className="w-full h-48 bg-surface-container-high rounded flex items-center justify-center border border-outline-variant border-dashed select-none">
-                    <span className="font-mono-label text-mono-label text-secondary">
-                      [ Financial Chart Graphic ]
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
+      return renderPreviewUnavailable('The server did not provide a preview URL for this PDF.');
     }
 
     // 2. Images
     if (isImage) {
+      if (!sourceUrl) return renderPreviewUnavailable('The server did not provide a preview URL for this image.');
       return (
         <div className="flex-1 overflow-auto p-container-padding bg-surface-container-low flex justify-center items-start custom-scrollbar">
           <div 
@@ -198,7 +161,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({
             style={{ transform: `scale(${zoomLevel / 100})` }}
           >
             <img
-              src={sourceUrl || 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=800'}
+              src={sourceUrl}
               alt={fileName}
               className="bg-surface max-w-3xl shadow-lg border border-outline-variant rounded object-contain"
             />
@@ -209,6 +172,9 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({
 
     // 3. Word DOCX
     if (isDocx) {
+      if (!sourceUrl) {
+        return renderPreviewUnavailable('The server did not provide a preview URL for this Word document.');
+      }
       return (
         <div className="flex-1 overflow-auto p-container-padding bg-surface-container-low flex justify-center items-start custom-scrollbar">
           {/* Custom style overrides for docx-preview rendering to prevent displacement */}
