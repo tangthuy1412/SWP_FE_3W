@@ -297,7 +297,7 @@ export const DocumentChat: React.FC<DocumentChatProps> = ({
         ) : (
           <div className="mx-auto max-w-3xl space-y-4">{messages.map((message) => <article key={`${message.messageId}-${message.createdAt}`} className={`flex ${message.role === 'USER' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[88%] rounded-xl px-4 py-3 text-sm leading-6 ${message.role === 'USER' ? 'bg-primary text-on-primary' : 'border border-outline-variant bg-surface-container-low text-on-surface'}`}><ReactMarkdown>{message.content || ''}</ReactMarkdown>{Array.isArray(message.sources) && message.sources.length > 0 && <p className="mt-2 border-t border-outline-variant pt-2 text-[11px] text-secondary">{message.sources.length} source {message.sources.length === 1 ? 'reference' : 'references'}</p>}</div></article>)}</div>
         )}
-        {loading && <p className="mx-auto mt-4 max-w-3xl text-sm text-secondary">Aether AI is reviewing your documents...</p>}
+        {loading && <p className="mx-auto mt-4 max-w-3xl text-sm text-secondary">Docentra AI is reviewing your documents...</p>}
         <div ref={endRef} />
       </div>
 

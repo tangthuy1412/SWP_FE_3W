@@ -171,7 +171,7 @@ export const SharedLinkPage: React.FC = () => {
           onClick={() => navigate('/login')}
           className="px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 font-bold rounded-lg transition-all shadow-md shadow-primary/10 cursor-pointer"
         >
-          Go to AetherDocs
+          Go to Docentra
         </button>
       </div>
     );
@@ -186,7 +186,7 @@ export const SharedLinkPage: React.FC = () => {
             <span className="material-symbols-outlined icon-fill select-none text-[18px]">cloud_sync</span>
           </div>
           <div>
-            <h1 className="font-bold text-sm text-on-surface">AetherDocs</h1>
+            <h1 className="font-bold text-sm text-on-surface">Docentra</h1>
             <p className="text-[10px] text-secondary">Shared Document View</p>
           </div>
         </div>

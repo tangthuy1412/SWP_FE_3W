@@ -54,7 +54,7 @@ export const RegisterPage: React.FC = () => {
             <span className="material-symbols-outlined icon-fill select-none text-[28px]">cloud_sync</span>
           </div>
           <h1 className="font-headline-lg text-headline-lg font-black text-on-surface tracking-tight">
-            AetherDocs
+            Docentra
           </h1>
           <p className="font-body-md text-secondary select-none">
             Create an account to start managing files

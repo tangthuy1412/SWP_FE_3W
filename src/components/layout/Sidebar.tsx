@@ -106,7 +106,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
             <span className="material-symbols-outlined icon-fill text-[19px]">cloud_sync</span>
           </div>
           {!collapsed && <div className="hidden lg:block min-w-0">
-            <h1 className="text-[18px] leading-tight font-bold tracking-[-0.04em] truncate">Aether<span className="text-tertiary">.</span></h1>
+            <h1 className="text-[18px] leading-tight font-bold tracking-[-0.04em] truncate">Docentra<span className="text-tertiary">.</span></h1>
             <p className="text-[11px] text-secondary">Document workspace</p>
           </div>}
           {!collapsed && onCollapsedChange && <button type="button" onClick={() => onCollapsedChange(true)} className="hidden lg:grid ml-auto w-8 h-8 place-items-center rounded-lg text-secondary hover:bg-surface-container" aria-label="Collapse sidebar"><span className="material-symbols-outlined text-[18px]">left_panel_close</span></button>}

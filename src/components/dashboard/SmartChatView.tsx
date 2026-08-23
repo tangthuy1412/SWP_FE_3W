@@ -86,7 +86,7 @@ export const SmartChatView: React.FC = () => {
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary">Smart Chat</p>
             <h2 className="mt-1 text-2xl font-bold text-on-surface">Choose what AI can use</h2>
-            <p className="mt-1 max-w-2xl text-sm text-secondary">Select ready documents before starting. Aether AI will answer only from that scope, so its sources stay relevant and easier to verify.</p>
+            <p className="mt-1 max-w-2xl text-sm text-secondary">Select ready documents before starting. Docentra AI will answer only from that scope, so its sources stay relevant and easier to verify.</p>
           </div>
           <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs font-semibold text-on-surface"><span className="material-symbols-outlined text-[16px] text-primary">workspace_premium</span>{planName}</span>
         </header>
