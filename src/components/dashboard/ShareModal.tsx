@@ -114,6 +114,17 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             setIsLinkSharingEnabled(
               !!statuses.LINK && statuses.LINK !== 'REJECTED',
             );
+            if (statuses.LINK === 'APPROVED' || statuses.LINK === 'PENDING_APPROVAL') {
+              try {
+                // Tận dụng hàm createShareLink, Backend sẽ tự động trả về link cũ đang active
+                const linkRes = await documentService.createShareLink(documentId);
+                if (linkRes.data && linkRes.data.success) {
+                  setShareToken(linkRes.data.data.token);
+                }
+              } catch (err) {
+                console.error('Không thể khôi phục token chia sẻ:', err);
+              }
+            }
           }
         } catch (e) {
           console.error('Failed to load modal data:', e);
