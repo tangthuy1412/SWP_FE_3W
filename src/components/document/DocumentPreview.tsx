@@ -126,10 +126,12 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({
           <h3 className="text-lg font-bold text-on-surface">Preview unavailable</h3>
           <p className="mt-2 text-sm leading-6 text-secondary">{message}</p>
         </div>
-        <button type="button" onClick={onDownloadClick} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary">
-          <span className="material-symbols-outlined text-[18px]">download</span>
-          Download original file
-        </button>
+        {onDownloadClick && (
+          <button type="button" onClick={onDownloadClick} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary">
+            <span className="material-symbols-outlined text-[18px]">download</span>
+            Download original file
+          </button>
+        )}
       </div>
     </div>
   );
@@ -284,10 +286,12 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({
                 Đây là định dạng Word 97-2003 cũ. Máy chủ cần chuyển tệp sang PDF hoặc DOCX trước khi trình duyệt có thể hiển thị nội dung.
               </p>
             </div>
-            <button type="button" onClick={onDownloadClick} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary">
-              <span className="material-symbols-outlined text-[18px]">download</span>
-              Tải tệp gốc
-            </button>
+            {onDownloadClick && (
+              <button type="button" onClick={onDownloadClick} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary">
+                <span className="material-symbols-outlined text-[18px]">download</span>
+                Tải tệp gốc
+              </button>
+            )}
           </div>
         </div>
       );
@@ -326,7 +330,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({
                 Hệ thống chưa tạo được liên kết xem trước trực tiếp cho tệp video <strong>{fileName}</strong> ({fileSize}). Vui lòng tải xuống máy để mở.
               </p>
             </div>
-            <div className="flex gap-4 w-full">
+            {onDownloadClick && <div className="flex gap-4 w-full">
               <button
                 onClick={onDownloadClick}
                 className="flex-1 py-2.5 px-4 bg-primary text-on-primary rounded-lg font-title-sm text-title-sm hover:shadow transition-shadow cursor-pointer flex items-center justify-center gap-2"
@@ -334,7 +338,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({
                 <span className="material-symbols-outlined text-[18px]">download</span>
                 Tải xuống video
               </button>
-            </div>
+            </div>}
           </div>
         </div>
       );
@@ -353,7 +357,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({
               Hệ thống chưa hỗ trợ xem trước trực tiếp định dạng tệp tin này trên trình duyệt. Bạn có thể tải xuống máy để mở.
             </p>
           </div>
-          <div className="flex gap-4 w-full">
+          {onDownloadClick && <div className="flex gap-4 w-full">
             <button
               onClick={onDownloadClick}
               className="flex-1 py-2.5 px-4 bg-primary text-on-primary rounded-lg font-title-sm text-title-sm hover:shadow transition-shadow cursor-pointer flex items-center justify-center gap-2"
@@ -361,7 +365,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({
               <span className="material-symbols-outlined text-[18px]">download</span>
               Tải xuống tệp tin
             </button>
-          </div>
+          </div>}
         </div>
       </div>
     );
@@ -441,20 +445,24 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({
             </button>
           )}
 
-          <button
-            onClick={onDownloadClick}
-            className="p-1.5 text-secondary hover:bg-surface-container rounded transition-colors cursor-pointer"
-            title="Download Document"
-          >
-            <span className="material-symbols-outlined text-[20px]">download</span>
-          </button>
-          <button
-            onClick={onShareClick}
-            className="p-1.5 text-secondary hover:bg-surface-container rounded transition-colors cursor-pointer"
-            title="Share Document"
-          >
-            <span className="material-symbols-outlined text-[20px]">share</span>
-          </button>
+          {onDownloadClick && (
+            <button
+              onClick={onDownloadClick}
+              className="p-1.5 text-secondary hover:bg-surface-container rounded transition-colors cursor-pointer"
+              title="Download Document"
+            >
+              <span className="material-symbols-outlined text-[20px]">download</span>
+            </button>
+          )}
+          {onShareClick && (
+            <button
+              onClick={onShareClick}
+              className="p-1.5 text-secondary hover:bg-surface-container rounded transition-colors cursor-pointer"
+              title="Share Document"
+            >
+              <span className="material-symbols-outlined text-[20px]">share</span>
+            </button>
+          )}
           {onToggleChat && (
             <button
               onClick={onToggleChat}
