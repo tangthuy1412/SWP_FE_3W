@@ -21,7 +21,7 @@ export type SubscriptionPlanPayload = Omit<SubscriptionPlan, 'id' | 'active'>;
 
 export interface UserSubscription {
   subscriptionId: number;
-  status: string; // e.g. "ACTIVE", "EXPIRED"
+  status: 'ACTIVE' | 'EXPIRED';
   startDate: string;
   endDate: string;
   planName: string;
@@ -44,7 +44,7 @@ export interface PurchaseResponse {
   paymentId: number;
   transactionNo: string;
   paymentUrl: string;
-  status: string;
+  status: 'PENDING' | 'SUCCESS' | 'FAILED';
 }
 
 export interface SystemOrder {
@@ -91,12 +91,12 @@ export const subscriptionService = {
     return apiClient.delete<BackendResponse<null>>(`/subscription-plans/${id}`);
   },
 
-  async purchasePlan(planId: number): Promise<ApiResponse<BackendResponse<{ paymentUrl: string }>>> {
-    return apiClient.post<BackendResponse<{ paymentUrl: string }>>('/payments/purchase', { planId, paymentMethod: 'VNPAY' });
+  async purchasePlan(planId: number): Promise<ApiResponse<BackendResponse<PurchaseResponse>>> {
+    return apiClient.post<BackendResponse<PurchaseResponse>>('/payments/purchase', { planId, paymentMethod: 'VNPAY' });
   },
 
   async getMySubscription(): Promise<ApiResponse<BackendResponse<UserSubscription>>> {
-    // Upload modal dùng maxUploadSizeMb để cảnh báo sớm file không phải video; backend vẫn validate chính thức.
+    // Backend resolves all active subscriptions and returns the single effective plan.
     return apiClient.get<BackendResponse<UserSubscription>>('/subscriptions/me');
   },
 

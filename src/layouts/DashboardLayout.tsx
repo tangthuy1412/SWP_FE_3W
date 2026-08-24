@@ -157,7 +157,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           onSearch={onSearch}
           onNotificationClick={() => onTabChange?.('Friends')}
           onHelpClick={() => alert('Help center clicked!')}
-          onUpgradeClick={() => setIsSubModalOpen(true)}
+          onPlansClick={() => setIsSubModalOpen(true)}
           onBillingClick={() => setIsBillingModalOpen(true)}
           isLoggedIn={isLoggedIn}
           onLoginClick={() => navigate('/login')}

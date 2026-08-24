@@ -285,7 +285,7 @@ export const DocumentChat: React.FC<DocumentChatProps> = ({
       ) : !planAllowsChat || tokenLimit <= 0 ? (
         <div className="m-4 rounded-lg border border-tertiary/30 bg-tertiary-fixed/20 p-4">
           <div className="flex gap-3"><span className="material-symbols-outlined text-tertiary">lock</span><div><p className="text-sm font-semibold text-on-surface">{isFolderMode ? 'Multi-document chat is not included in your plan' : 'AI chat is not included in your plan'}</p><p className="mt-1 text-xs text-secondary">Your {planName} plan {isFolderMode ? 'supports chat with one document at a time.' : 'does not include monthly AI tokens.'}</p></div></div>
-          <button type="button" onClick={() => window.dispatchEvent(new Event('open-subscription-plans'))} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-on-primary"><span className="material-symbols-outlined text-[17px]">upgrade</span>View plans</button>
+          <button type="button" onClick={() => window.dispatchEvent(new Event('open-subscription-plans'))} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-on-primary"><span className="material-symbols-outlined text-[17px]">workspace_premium</span>View plans</button>
         </div>
       ) : !documentReady ? (
         <div className="m-4 flex gap-3 rounded-lg border border-outline-variant bg-surface-container-low p-4 text-sm text-secondary"><span className="material-symbols-outlined">hourglass_top</span>{isFolderMode ? 'This folder has no documents ready for AI yet.' : 'This document is still being processed. Chat will be available when it is ready.'}</div>

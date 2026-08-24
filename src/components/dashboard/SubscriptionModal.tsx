@@ -9,7 +9,7 @@ interface SubscriptionModalProps {
 
 export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose }) => {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
-  const [currentSub, setCurrentSub] = useState<UserSubscription | null>(null);
+  const [effectiveSubscription, setEffectiveSubscription] = useState<UserSubscription | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPurchasing, setIsPurchasing] = useState<number | null>(null);
@@ -20,6 +20,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
     const loadSubscriptionData = async () => {
       setIsLoading(true);
       setError(null);
+      setEffectiveSubscription(null);
       try {
         const [plansRes, subRes] = await Promise.all([
           subscriptionService.getSubscriptionPlans(),
@@ -35,7 +36,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
         }
 
         if (subRes.data && subRes.data.success) {
-          setCurrentSub(subRes.data.data);
+          setEffectiveSubscription(subRes.data.data);
         }
       } catch (err) {
         console.error('Error fetching subscription data:', err);
@@ -87,7 +88,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
         <div className="flex justify-between items-start mb-6">
           <div>
             <h2 className="font-title-lg text-title-lg font-bold">Plans and access</h2>
-            <p className="text-secondary text-sm mt-1">Compare exactly what your account can use. Your current plan is clearly marked.</p>
+            <p className="text-secondary text-sm mt-1">Choose any plan. Your highest active plan determines your current access.</p>
           </div>
           <button 
             onClick={onClose}
@@ -112,24 +113,23 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {plans.map((plan) => {
-              const isCurrent = currentSub && currentSub.planName.toLowerCase() === plan.name.toLowerCase() && currentSub.status === 'ACTIVE';
+              const isEffective = effectiveSubscription?.status === 'ACTIVE'
+                && effectiveSubscription.planName.toLowerCase() === plan.name.toLowerCase();
               const isFree = plan.price === 0;
-              const currentPrice = currentSub && currentSub.status === 'ACTIVE' ? currentSub.price : 0;
-              const isDowngrade = plan.price < currentPrice;
-              const isDisabled = isCurrent || isDowngrade || isPurchasing !== null;
+              const isDisabled = isPurchasing !== null;
 
               return (
                 <div 
                   key={plan.id}
                   className={`relative flex flex-col bg-surface-container-low border rounded-2xl p-6 transition-all duration-300 hover:shadow-md hover:border-primary/50 group ${
-                    isCurrent 
+                    isEffective
                       ? 'border-2 border-primary ring-4 ring-primary/10' 
                       : 'border-outline-variant'
                   }`}
                 >
-                  {isCurrent && (
+                  {isEffective && (
                     <span className="absolute top-0 right-6 -translate-y-1/2 px-3 py-1 bg-primary text-on-primary font-label-md text-xs font-bold rounded-full shadow-sm">
-                      Current Plan
+                      Effective Plan
                     </span>
                   )}
 
@@ -225,12 +225,10 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
                           <div className="w-4 h-4 border-2 border-on-primary/25 border-t-on-primary rounded-full animate-spin" />
                           <span>Connecting...</span>
                         </>
-                      ) : isCurrent ? (
-                        'Active'
-                      ) : isDowngrade ? (
-                        'Downgrade Blocked'
+                      ) : isEffective ? (
+                        'Buy Again'
                       ) : (
-                        'Upgrade Plan'
+                        'Buy Plan'
                       )}
                     </button>
                   )}

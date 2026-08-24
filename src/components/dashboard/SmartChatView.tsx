@@ -41,7 +41,7 @@ export const SmartChatView: React.FC = () => {
     setSelectedIds((current) => {
       if (current.includes(id)) return current.filter((item) => item !== id);
       if (!canChatMultiple && current.length >= 1) {
-        setError(`${planName} supports one document per chat. Upgrade to select and compare multiple documents.`);
+        setError(`${planName} supports one document per chat. Choose a plan with multi-document access to compare documents.`);
         return current;
       }
       return [...current, id];
@@ -94,7 +94,7 @@ export const SmartChatView: React.FC = () => {
         {!canChatMultiple && (
           <div className="mt-4 flex flex-col gap-3 rounded-lg border border-tertiary/30 bg-tertiary-fixed/20 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex gap-3"><span className="material-symbols-outlined text-tertiary">info</span><div><p className="text-sm font-semibold text-on-surface">Your plan supports one document per chat</p><p className="mt-0.5 text-xs text-secondary">Multi-document chat lets you compare, summarize, and find connections across several files.</p></div></div>
-            <button type="button" onClick={() => window.dispatchEvent(new Event('open-subscription-plans'))} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-on-primary"><span className="material-symbols-outlined text-[17px]">upgrade</span>Compare plans</button>
+            <button type="button" onClick={() => window.dispatchEvent(new Event('open-subscription-plans'))} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-on-primary"><span className="material-symbols-outlined text-[17px]">workspace_premium</span>Compare plans</button>
           </div>
         )}
 

@@ -7,7 +7,7 @@ export interface TopbarProps {
   onSearch?: (query: string) => void;
   onNotificationClick?: () => void;
   onHelpClick?: () => void;
-  onUpgradeClick?: () => void;
+  onPlansClick?: () => void;
   onProfileClick?: () => void;
   onBillingClick?: () => void;
   onLogoutClick?: () => void;
@@ -23,7 +23,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   onSearch,
   onNotificationClick,
   onHelpClick,
-  onUpgradeClick,
+  onPlansClick,
   onProfileClick,
   onBillingClick,
   onLogoutClick,
@@ -85,11 +85,11 @@ export const Topbar: React.FC<TopbarProps> = ({
         {isLoggedIn && <NotificationCenter onOpenFriends={onNotificationClick} />}
 
         <button
-          onClick={onUpgradeClick}
+          onClick={onPlansClick}
           className="hidden lg:inline-flex items-center gap-2 rounded-xl border border-[#efc49e] bg-[#ffe0bd] px-4 py-2 text-[#70401f] font-semibold transition-all hover:bg-[#ffd5a5]"
         >
-          <span className="material-symbols-outlined text-[18px]">rocket_launch</span>
-          Upgrade
+          <span className="material-symbols-outlined text-[18px]">workspace_premium</span>
+          Plans
         </button>
 
         {isLoggedIn ? (
