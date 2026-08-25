@@ -19,9 +19,11 @@ export interface ShareModalProps {
 }
 
 interface ExistingShare {
+  documentShareId: number;
   userId: number;
   email: string;
   fullName: string;
+  status: ShareApprovalStatus;
   createdAt?: string;
 }
 
@@ -53,6 +55,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   // Direct sharing states
   const [friendSearch, setFriendSearch] = useState('');
   const [customEmail, setCustomEmail] = useState('');
+  const [selectedFriendIds, setSelectedFriendIds] = useState<Set<number>>(() => new Set());
   const [isSharingDirect, setIsSharingDirect] = useState(false);
   const [directShareStatus, setDirectShareStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   
@@ -68,6 +71,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       setCopySuccess(false);
       setFriendSearch('');
       setCustomEmail('');
+      setSelectedFriendIds(new Set());
       setDirectShareStatus(null);
       setExistingShares([]);
       setApprovalStatuses(
@@ -93,9 +97,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           if (sharesRes?.data && sharesRes.data.success) {
             setExistingShares(
               sharesRes.data.data.map((s) => ({
+                documentShareId: s.documentShareId,
                 userId: s.sharedWithUserId,
                 email: s.sharedWithEmail,
                 fullName: s.sharedWithName,
+                status: s.status || 'PENDING_APPROVAL',
                 createdAt: s.createdAt,
               }))
             );
@@ -211,9 +217,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         // Add or update in existing shares
         setExistingShares((prev) => [
           {
+            documentShareId: shareData.documentShareId,
             userId: shareData.sharedWithUserId,
             email: shareData.sharedWithEmail,
             fullName: shareData.sharedWithName,
+            status: shareData.status || 'PENDING_APPROVAL',
             createdAt: shareData.createdAt || new Date().toISOString(),
           },
           ...prev.filter((s) => s.userId !== shareData.sharedWithUserId),
@@ -259,9 +267,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         // Add to existing shares
         setExistingShares((prev) => [
           {
+            documentShareId: shareData.documentShareId,
             userId: friend.userId,
             email: friend.email,
             fullName: friend.fullName,
+            status: shareData.status || 'PENDING_APPROVAL',
             createdAt: shareData?.createdAt || new Date().toISOString(),
           },
           ...prev.filter((s) => s.userId !== friend.userId),
@@ -282,17 +292,99 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     }
   };
 
-  // Filter friends list based on search and whether they are already in existingShares
+  const handleBulkShare = async () => {
+    const selectedFriends = friends.filter((friend) => selectedFriendIds.has(friend.userId));
+    if (selectedFriends.length === 0) return;
+
+    const confirmed = await confirmAction({
+      title: 'Share Document?',
+      message: `Share "${documentName}" with ${selectedFriends.length} selected friend${selectedFriends.length === 1 ? '' : 's'}?`,
+      confirmLabel: 'Share',
+      variant: 'primary',
+    });
+    if (!confirmed) return;
+
+    setIsSharingDirect(true);
+    setDirectShareStatus(null);
+    try {
+      const response = await documentService.bulkShareDocumentWithUsers(
+        documentId,
+        selectedFriends.map((friend) => friend.email),
+      );
+      if (response.data?.success) {
+        const updatedShares: ExistingShare[] = (response.data.data || []).map((share) => ({
+          documentShareId: share.documentShareId,
+          userId: share.sharedWithUserId,
+          email: share.sharedWithEmail,
+          fullName: share.sharedWithName,
+          status: share.status || 'PENDING_APPROVAL',
+          createdAt: share.createdAt || new Date().toISOString(),
+        }));
+        const updatedUserIds = new Set(updatedShares.map((share) => share.userId));
+        setExistingShares((current) => [
+          ...updatedShares,
+          ...current.filter((share) => !updatedUserIds.has(share.userId)),
+        ]);
+        setSelectedFriendIds(new Set());
+        setApprovalStatuses((current) => ({ ...current, DIRECT: 'PENDING_APPROVAL' }));
+        onApprovalStatusChange?.('PENDING_APPROVAL');
+        setDirectShareStatus({
+          type: 'success',
+          message: `Share requests sent for ${updatedShares.length} user${updatedShares.length === 1 ? '' : 's'}. Access starts after admin approval.`,
+        });
+      } else {
+        setDirectShareStatus({
+          type: 'error',
+          message: response.error || 'Failed to share the document with the selected users.',
+        });
+      }
+    } catch {
+      setDirectShareStatus({
+        type: 'error',
+        message: 'An error occurred while sharing the document with the selected users.',
+      });
+    } finally {
+      setIsSharingDirect(false);
+    }
+  };
+
+  const toggleFriendSelection = (userId: number) => {
+    setSelectedFriendIds((current) => {
+      const next = new Set(current);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+  };
+
+  // Approved and pending recipients are not selectable; rejected shares can be submitted again.
   const filteredFriends = friends.filter(
-    (friend) =>
-      (friend.fullName.toLowerCase().includes(friendSearch.toLowerCase()) ||
-        friend.email.toLowerCase().includes(friendSearch.toLowerCase())) &&
-      !existingShares.some((s) => s.userId === friend.userId)
+    (friend) => {
+      const existingShare = existingShares.find((share) => share.userId === friend.userId);
+      return (
+        (friend.fullName.toLowerCase().includes(friendSearch.toLowerCase()) ||
+          friend.email.toLowerCase().includes(friendSearch.toLowerCase())) &&
+        (!existingShare || existingShare.status === 'REJECTED')
+      );
+    },
   );
+  const allVisibleFriendsSelected = filteredFriends.length > 0
+    && filteredFriends.every((friend) => selectedFriendIds.has(friend.userId));
+
+  const toggleAllVisibleFriends = () => {
+    setSelectedFriendIds((current) => {
+      const next = new Set(current);
+      if (allVisibleFriendsSelected) {
+        filteredFriends.forEach((friend) => next.delete(friend.userId));
+      } else {
+        filteredFriends.forEach((friend) => next.add(friend.userId));
+      }
+      return next;
+    });
+  };
 
   const shareUrl = shareToken ? `${window.location.origin}/share/${shareToken}` : '';
   const linkApprovalStatus = approvalStatuses.LINK;
-  const directApprovalStatus = approvalStatuses.DIRECT;
   const linkInputValue = isLoadingLink
     ? 'Creating link request...'
     : shareUrl || (linkApprovalStatus === 'APPROVED'
@@ -430,15 +522,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           {/* TAB 2: SHARE WITH FRIENDS */}
           {activeTab === 'friends' && (
             <div className="space-y-4">
-              {directApprovalStatus && (
-                <div className="flex items-center justify-between gap-3 rounded-lg border border-outline-variant/60 bg-surface-container-low px-3 py-2 text-xs">
-                  <span className="text-secondary">Direct share access</span>
-                  <span className={`rounded-full px-2 py-1 font-semibold ${approvalStatusDetails[directApprovalStatus].classes}`}>
-                    {approvalStatusDetails[directApprovalStatus].label}
-                  </span>
-                </div>
-              )}
-              
               {/* Direct email share input */}
               <form onSubmit={handleDirectShareSubmit} className="flex gap-2">
                 <div className="flex-1 flex rounded-lg border border-surface-variant bg-surface focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary overflow-hidden transition-all h-10.5">
@@ -478,10 +561,17 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
               {/* Friends lists autocomplete select */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between select-none">
-                  <span className="font-label-md text-label-md text-secondary">
-                    Select Friends
-                  </span>
+                <div className="flex flex-wrap items-center justify-between gap-2 select-none">
+                  <label className="inline-flex items-center gap-2 text-xs font-semibold text-secondary">
+                    <input
+                      type="checkbox"
+                      checked={allVisibleFriendsSelected}
+                      onChange={toggleAllVisibleFriends}
+                      disabled={isSharingDirect || filteredFriends.length === 0}
+                      className="h-4 w-4 accent-primary"
+                    />
+                    Select visible
+                  </label>
                   {friends.length > 0 && (
                     <input
                       type="text"
@@ -500,19 +590,34 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                         key={friend.friendshipId}
                         className="flex items-center justify-between px-4 py-2 hover:bg-surface-container border-b border-surface-variant/40 last:border-0"
                       >
-                        <div className="min-w-0 mr-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedFriendIds.has(friend.userId)}
+                          onChange={() => toggleFriendSelection(friend.userId)}
+                          disabled={isSharingDirect}
+                          aria-label={`Select ${friend.fullName}`}
+                          className="mr-3 h-4 w-4 shrink-0 accent-primary"
+                        />
+                        <div className="min-w-0 flex-1 mr-3">
                           <p className="font-label-md text-xs text-on-surface font-semibold truncate">
                             {friend.fullName}
                           </p>
-                          <p className="text-[10px] text-secondary truncate">{friend.email}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-[10px] text-secondary truncate">{friend.email}</p>
+                            {existingShares.some((share) => share.userId === friend.userId && share.status === 'REJECTED') && (
+                              <span className="shrink-0 text-[10px] font-semibold text-error">Rejected</span>
+                            )}
+                          </div>
                         </div>
                         <button
                           type="button"
                           onClick={() => handleShareWithFriend(friend)}
                           disabled={isSharingDirect}
-                          className="px-2.5 py-1 text-[11px] text-primary hover:bg-primary/10 rounded font-bold transition-all cursor-pointer disabled:opacity-50"
+                          title={`Share with ${friend.fullName}`}
+                          aria-label={`Share with ${friend.fullName}`}
+                          className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
                         >
-                          Share
+                          <span className="material-symbols-outlined text-[18px]">person_add</span>
                         </button>
                       </div>
                     ))
@@ -529,8 +634,22 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                         'No matching friends found.'
                       )}
                     </div>
-                  )}
+                    )}
                 </div>
+
+                <button
+                  type="button"
+                  onClick={handleBulkShare}
+                  disabled={isSharingDirect || selectedFriendIds.size === 0}
+                  className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-bold text-on-primary transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+                >
+                  {isSharingDirect ? (
+                    <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                  ) : (
+                    <span className="material-symbols-outlined text-[18px]">group_add</span>
+                  )}
+                  Share selected{selectedFriendIds.size > 0 ? ` (${selectedFriendIds.size})` : ''}
+                </button>
               </div>
 
               {/* Existing Shares List with Timestamps */}
@@ -554,9 +673,14 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                         className="flex items-center justify-between px-4 py-2 border-b border-surface-variant/30 last:border-0 hover:bg-surface-container"
                       >
                         <div className="min-w-0 mr-3">
-                          <p className="font-label-md text-xs text-on-surface font-semibold truncate">
-                            {share.fullName || 'User'}
-                          </p>
+                          <div className="flex min-w-0 items-center gap-2">
+                            <p className="truncate font-label-md text-xs font-semibold text-on-surface">
+                              {share.fullName || 'User'}
+                            </p>
+                            <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold ${approvalStatusDetails[share.status].classes}`}>
+                              {approvalStatusDetails[share.status].label}
+                            </span>
+                          </div>
                           <div className="flex items-center gap-2 text-[10px] text-secondary">
                             <span className="truncate">{share.email}</span>
                             {share.createdAt && (

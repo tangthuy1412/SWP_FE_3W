@@ -29,10 +29,14 @@ export type DocumentShareApprovalType = "PUBLIC" | "LINK" | "DIRECT";
 
 export interface DocumentShareApproval {
   approvalId: number;
+  documentShareId?: number;
   documentId: number;
   documentName: string;
   ownerId?: number;
   ownerEmail?: string | null;
+  sharedWithUserId?: number;
+  sharedWithEmail?: string | null;
+  sharedWithName?: string | null;
   shareType: DocumentShareApprovalType;
   status: ShareApprovalStatus;
   createdAt: string;
@@ -114,6 +118,7 @@ export interface DocumentShareResponse {
   sharedWithUserId: number;
   sharedWithEmail: string;
   sharedWithName: string;
+  status: ShareApprovalStatus;
   createdAt: string;
 }
 
@@ -218,6 +223,17 @@ export const documentService = {
     if (shareType) query.set("shareType", shareType);
     return apiClient.request<BackendResponse<DocumentUploadResponse>>(
       `/documents/${documentId}/share-approval?${query.toString()}`,
+      { method: "PATCH" },
+    );
+  },
+
+  async reviewIndividualShareApproval(
+    documentShareId: number,
+    status: Extract<ShareApprovalStatus, "APPROVED" | "REJECTED">,
+  ): Promise<ApiResponse<BackendResponse<DocumentShareResponse>>> {
+    const query = new URLSearchParams({ status });
+    return apiClient.request<BackendResponse<DocumentShareResponse>>(
+      `/documents/shares/${documentShareId}/approval?${query.toString()}`,
       { method: "PATCH" },
     );
   },
@@ -440,6 +456,16 @@ export const documentService = {
     return apiClient.post<BackendResponse<DocumentShareResponse>>(
       `/documents/${documentId}/shares/users`,
       { email },
+    );
+  },
+
+  async bulkShareDocumentWithUsers(
+    documentId: number,
+    emails: string[],
+  ): Promise<ApiResponse<BackendResponse<DocumentShareResponse[]>>> {
+    return apiClient.post<BackendResponse<DocumentShareResponse[]>>(
+      `/documents/${documentId}/shares/users/bulk`,
+      emails,
     );
   },
 

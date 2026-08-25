@@ -158,11 +158,16 @@ export const ShareApprovalsView: React.FC<ShareApprovalsViewProps> = ({ isAdmin 
     setActionId(approval.approvalId);
     setActionStatus(status);
     try {
-      const response = await documentService.reviewDocumentShareApproval(
-        approval.documentId,
-        status,
-        approval.shareType,
-      );
+      const response = approval.shareType === "DIRECT"
+        ? await documentService.reviewIndividualShareApproval(
+            approval.documentShareId ?? approval.approvalId,
+            status,
+          )
+        : await documentService.reviewDocumentShareApproval(
+            approval.documentId,
+            status,
+            approval.shareType,
+          );
       if (response.data?.success) {
         toast.success(`Share request ${status === "APPROVED" ? "approved" : "rejected"}.`);
         setRefreshToken((value) => value + 1);
@@ -190,6 +195,8 @@ export const ShareApprovalsView: React.FC<ShareApprovalsViewProps> = ({ isAdmin 
   };
 
   const handleOpenPreview = async (approval: DocumentShareApproval) => {
+    if (!isAdmin) return;
+
     const requestId = previewRequestRef.current + 1;
     previewRequestRef.current = requestId;
     setPreviewApproval(approval);
@@ -198,7 +205,11 @@ export const ShareApprovalsView: React.FC<ShareApprovalsViewProps> = ({ isAdmin 
     setIsPreviewLoading(true);
 
     try {
-      const detailResponse = await documentService.getDocumentDetail(approval.documentId);
+      const [detailResponse, previewResponse, downloadResponse] = await Promise.all([
+        documentService.getDocumentDetail(approval.documentId),
+        documentService.getDocumentPreviewUrl(approval.documentId),
+        documentService.getDocumentDownloadUrl(approval.documentId),
+      ]);
       if (requestId !== previewRequestRef.current) return;
       if (!detailResponse.data?.success || !detailResponse.data.data) {
         setPreviewError(
@@ -206,12 +217,6 @@ export const ShareApprovalsView: React.FC<ShareApprovalsViewProps> = ({ isAdmin 
         );
         return;
       }
-
-      const [previewResponse, downloadResponse] = await Promise.all([
-        documentService.getDocumentPreviewUrl(approval.documentId),
-        documentService.getDocumentDownloadUrl(approval.documentId),
-      ]);
-      if (requestId !== previewRequestRef.current) return;
 
       const document = detailResponse.data.data;
       setPreview({
@@ -294,11 +299,12 @@ export const ShareApprovalsView: React.FC<ShareApprovalsViewProps> = ({ isAdmin 
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-outline-variant/70">
-          <table className="w-full min-w-[820px] text-left text-sm">
+          <table className="w-full min-w-[940px] text-left text-sm">
             <thead className="bg-surface-container-low text-xs uppercase tracking-wide text-secondary">
               <tr>
                 <th className="px-4 py-3 font-semibold">Document</th>
                 {isAdmin && <th className="px-4 py-3 font-semibold">Owner</th>}
+                {isAdmin && <th className="px-4 py-3 font-semibold">Recipient</th>}
                 <th className="px-4 py-3 font-semibold">Share type</th>
                 <th className="px-4 py-3 font-semibold">Status</th>
                 <th className="px-4 py-3 font-semibold">Created</th>
@@ -314,6 +320,18 @@ export const ShareApprovalsView: React.FC<ShareApprovalsViewProps> = ({ isAdmin 
                   </td>
                   {isAdmin && (
                     <td className="max-w-[190px] truncate px-4 py-3 text-secondary">{approval.ownerEmail || `User #${approval.ownerId ?? "-"}`}</td>
+                  )}
+                  {isAdmin && (
+                    <td className="max-w-[190px] px-4 py-3 text-secondary">
+                      {approval.shareType === "DIRECT" ? (
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-on-surface">{approval.sharedWithName || "User"}</p>
+                          <p className="truncate text-xs">{approval.sharedWithEmail || `User #${approval.sharedWithUserId ?? "-"}`}</p>
+                        </div>
+                      ) : (
+                        <span aria-label="Not applicable">-</span>
+                      )}
+                    </td>
                   )}
                   <td className="px-4 py-3 text-secondary">{approval.shareType}</td>
                   <td className="px-4 py-3"><Badge variant={statusVariant(approval.status)}>{approval.status.replace("_", " ")}</Badge></td>
