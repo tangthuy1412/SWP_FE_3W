@@ -409,7 +409,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="material-symbols-outlined text-secondary hover:text-on-surface hover:bg-surface-variant p-1 rounded-full cursor-pointer transition-colors"
+            className="material-symbols-outlined rounded-full border border-outline-variant bg-surface p-1 text-on-surface shadow-sm transition-colors hover:border-primary/30 hover:bg-surface-container-high cursor-pointer"
+            aria-label="Close share dialog"
           >
             close
           </button>
@@ -617,7 +618,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                           aria-label={`Share with ${friend.fullName}`}
                           className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
                         >
-                          <span className="material-symbols-outlined text-[18px]">person_add</span>
+                          <span className="material-symbols-outlined text-[18px]">send</span>
                         </button>
                       </div>
                     ))
@@ -646,7 +647,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                   {isSharingDirect ? (
                     <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
                   ) : (
-                    <span className="material-symbols-outlined text-[18px]">group_add</span>
+                    <span className="material-symbols-outlined text-[18px]">send</span>
                   )}
                   Share selected{selectedFriendIds.size > 0 ? ` (${selectedFriendIds.size})` : ''}
                 </button>
@@ -715,7 +716,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 bg-secondary hover:bg-surface-variant hover:text-on-surface text-on-surface-variant rounded-lg font-bold transition-all cursor-pointer"
+            className="rounded-lg border border-outline-variant bg-surface px-5 py-2.5 font-bold text-on-surface shadow-sm transition-all hover:border-primary/30 hover:bg-surface-container-high cursor-pointer"
           >
             Close
           </button>

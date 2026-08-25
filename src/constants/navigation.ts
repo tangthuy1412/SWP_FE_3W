@@ -13,7 +13,6 @@ export const navigationSections: { label: string; items: NavigationItem[] }[] = 
       { name: 'Smart Chat', icon: 'forum' },
       { name: 'Shared', icon: 'group', badge: 'shared' },
       { name: 'Community', icon: 'public' },
-      { name: 'Offline', icon: 'offline_pin' },
     ],
   },
   {

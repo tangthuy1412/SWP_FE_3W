@@ -6,7 +6,6 @@ export interface DocumentPreviewProps {
   fileSize: string;
   lastModified?: string;
   previewUrl: string | null;
-  localBlobUrl?: string | null;
   downloadUrl: string | null;
   contentType: string | null;
   onDownloadClick?: () => void;
@@ -24,7 +23,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({
   fileSize,
   lastModified = '2 hours ago',
   previewUrl,
-  localBlobUrl = null,
   contentType,
   onDownloadClick,
   onShareClick,
@@ -55,7 +53,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({
   const isLegacyDoc = contentType === 'application/msword' || /\.doc$/i.test(fileName);
   const isVideo = contentType?.startsWith('video/') || /\.(mp4|mkv|mov|avi|webm|wmv|flv|3gp|ogg)$/i.test(fileName.toLowerCase());
   const isUnsupported = !isPdf && !isImage && !isDocx && !isLegacyDoc && !isVideo;
-  const sourceUrl = localBlobUrl || previewUrl;
+  const sourceUrl = previewUrl;
 
   useEffect(() => {
     let isCancelled = false;

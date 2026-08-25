@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
 import DashboardPage from './pages/DashboardPage'
@@ -10,9 +9,7 @@ import OAuth2RedirectHandler from './pages/OAuth2RedirectHandler'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import SharedLinkPage from './pages/SharedLinkPage'
 import ProfilePage from './pages/ProfilePage'
-import OfflineDocumentsPage from './pages/OfflineDocumentsPage'
 import { UserProfileProvider } from './contexts/UserProfileContext'
-import { offlineDocumentService } from './services/offlineDocumentService'
 import AlertToast from './components/common/AlertToast'
 import { ConfirmProvider } from './contexts/ConfirmContext'
 
@@ -23,20 +20,6 @@ function ProtectedRoute() {
 }
 
 function App() {
-  useEffect(() => {
-    const handleOnline = () => {
-      if (!localStorage.getItem('token')) return;
-      const userId = Number(localStorage.getItem('userId'));
-      if (!Number.isFinite(userId) || userId <= 0) return;
-      offlineDocumentService.synchronizeOfflineDocuments(userId).catch((error) => {
-        console.error('Background offline document sync failed:', error);
-      });
-    };
-
-    window.addEventListener('online', handleOnline);
-    return () => window.removeEventListener('online', handleOnline);
-  }, []);
-
   return (
     <UserProfileProvider>
       <ConfirmProvider>
@@ -55,7 +38,6 @@ function App() {
           <Route path="/approvals" element={<DashboardPage />} />
           {/* Route mở màn hình chi tiết tài liệu, nơi người dùng có thể preview và hỏi AI về đúng tài liệu đó. */}
           <Route path="/document/:id" element={<FileDetailPage />} />
-          <Route path="/offline-documents" element={<OfflineDocumentsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/payment-result" element={<PaymentResultPage />} />
           </Route>

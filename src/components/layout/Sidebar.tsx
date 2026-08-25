@@ -80,12 +80,6 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
   }, []);
 
   const handleTabClick = (tabName: string) => {
-    if (tabName === 'Offline') {
-      navigate('/offline-documents');
-      if (onClose) onClose();
-      return;
-    }
-
     if (onTabChange) {
       // Already on a page that manages tabs locally (e.g. the dashboard) - switch in place.
       onTabChange(tabName);
