@@ -70,10 +70,12 @@ export const DocumentChat: React.FC<DocumentChatProps> = ({
 
   useEffect(() => {
     subscriptionService.getMySubscription().then((response) => {
-      if (response.data?.success) {
+      if (response.data?.success && response.data.data.status === 'ACTIVE') {
         setPlanName(response.data.data.planName || 'Free');
         setCanChatMultiple(response.data.data.multipleDocuments);
-        setTokenLimit(response.data.data.monthlyTokenLimit || 0);
+        setTokenLimit(response.data.data.monthlyTokenLimit ?? 0);
+      } else {
+        setError('No active subscription is available for AI chat.');
       }
     }).catch(() => setError('Could not verify your plan. Please try again.'))
       .finally(() => setCheckingPlan(false));

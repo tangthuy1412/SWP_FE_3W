@@ -186,10 +186,8 @@ export const DashboardPage: React.FC = () => {
         documentService.getSharedWithMeDocuments().catch(() => null),
       ]);
 
-      if (subRes && subRes.data && subRes.data.success && subRes.data.data) {
-        setStorageLimitGb(subRes.data.data.storageLimitGb || 2);
-      } else {
-        setStorageLimitGb(2);
+      if (subRes?.data?.success && subRes.data.data.status === 'ACTIVE') {
+        setStorageLimitGb(subRes.data.data.storageLimitGb);
       }
 
       if (

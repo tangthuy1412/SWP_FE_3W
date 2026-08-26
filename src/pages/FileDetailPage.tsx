@@ -93,8 +93,8 @@ export const FileDetailPage: React.FC = () => {
           ]);
 
           let limitGb = 2;
-          if (subRes && subRes.data && subRes.data.success && subRes.data.data) {
-            limitGb = subRes.data.data.storageLimitGb || 2;
+          if (subRes?.data?.success && subRes.data.data.status === 'ACTIVE') {
+            limitGb = subRes.data.data.storageLimitGb;
           }
 
           let myTotal = 0;

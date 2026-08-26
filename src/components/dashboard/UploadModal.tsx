@@ -62,10 +62,11 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     setIsPlanLoading(true);
     try {
       const response = await subscriptionService.getMySubscription();
-      if (response.data && response.data.success) {
+      if (response.data?.success && response.data.data.status === 'ACTIVE') {
         setSubscription(response.data.data);
       } else {
-        setFileError('Could not verify upload access for your plan.');
+        setSubscription(null);
+        setFileError('No active subscription is available for uploads.');
       }
     } catch (error) {
       console.error('Failed to load upload limit:', error);

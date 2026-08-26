@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/layout/Sidebar';
 import Topbar from '../components/layout/Topbar';
@@ -6,6 +6,7 @@ import SubscriptionModal from '../components/dashboard/SubscriptionModal';
 import BillingModal from '../components/dashboard/BillingModal';
 import { authService } from '../services/authService';
 import subscriptionService from '../services/subscriptionService';
+import type { UserSubscription } from '../services/subscriptionService';
 import { documentService } from '../services/documentService';
 import type { DocumentUploadResponse } from '../services/documentService';
 import { useUserProfile } from '../contexts/UserProfileContext';
@@ -49,10 +50,29 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const [isSubModalOpen, setIsSubModalOpen] = useState(false);
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
   const [activePlanName, setActivePlanName] = useState<string>('');
+  const [pendingPlanName, setPendingPlanName] = useState<string>('');
   const [internalStorage, setInternalStorage] = useState<StorageUsage | undefined>(undefined);
   const isLoggedIn = !!localStorage.getItem('token');
   const { avatarUrl } = useUserProfile();
   const confirmAction = useConfirm();
+
+  const applySubscription = useCallback((subscription: UserSubscription) => {
+    setActivePlanName(subscription.status === 'ACTIVE' ? subscription.planName : '');
+    setPendingPlanName(subscription.pendingPlanName || '');
+
+    if (subscription.status !== 'ACTIVE') return;
+    const limitGb = subscription.storageLimitGb;
+    setInternalStorage((current) => {
+      if (!current) return current;
+      const totalBytes = limitGb * 1024 * 1024 * 1024;
+      return {
+        ...current,
+        totalBytes,
+        usedPercentage: Math.min(100, Math.round((current.usedBytes / totalBytes) * 100)),
+        formattedTotal: `${limitGb} GB`,
+      };
+    });
+  }, []);
 
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -65,12 +85,12 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           documentService.getSharedWithMeDocuments().catch(() => null),
         ]);
 
-        let limitGb = 2;
+        let limitGb: number | null = null;
         if (subRes && subRes.data && subRes.data.success && subRes.data.data) {
-          setActivePlanName(subRes.data.data.planName || 'FREE');
-          limitGb = subRes.data.data.storageLimitGb || 2;
-        } else {
-          setActivePlanName('FREE');
+          applySubscription(subRes.data.data);
+          if (subRes.data.data.status === 'ACTIVE') {
+            limitGb = subRes.data.data.storageLimitGb;
+          }
         }
 
         let totalUsed = 0;
@@ -81,6 +101,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           totalUsed += sharedDocsRes.data.data.reduce((sum: number, f: DocumentUploadResponse) => sum + (f.fileSize || 0), 0);
         }
 
+        if (limitGb === null) return;
         const totalBytes = limitGb * 1024 * 1024 * 1024;
         const usedPercentage = Math.min(100, Math.round((totalUsed / totalBytes) * 100));
 
@@ -97,7 +118,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     };
 
     fetchDashboardData();
-  }, [isLoggedIn]);
+  }, [applySubscription, isLoggedIn]);
 
   useEffect(() => {
     const openPlans = () => setIsSubModalOpen(true);
@@ -165,6 +186,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           onLogoutClick={handleLogout}
           avatarUrl={avatarUrl}
           activePlanName={activePlanName}
+          pendingPlanName={pendingPlanName}
           activeTab={activeTab}
         />
 
@@ -186,6 +208,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       <SubscriptionModal 
         isOpen={isSubModalOpen}
         onClose={() => setIsSubModalOpen(false)}
+        onSubscriptionChange={applySubscription}
       />
 
       {/* Billing History Modal */}

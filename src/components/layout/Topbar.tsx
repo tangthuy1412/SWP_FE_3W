@@ -15,6 +15,7 @@ export interface TopbarProps {
   onLoginClick?: () => void;
   avatarUrl?: string | null;
   activePlanName?: string;
+  pendingPlanName?: string;
   activeTab?: string;
 }
 
@@ -31,6 +32,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   onLoginClick,
   avatarUrl,
   activePlanName,
+  pendingPlanName,
   activeTab = 'Workspace',
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -102,6 +104,15 @@ export const Topbar: React.FC<TopbarProps> = ({
               {activePlanName && (
                 <span className="hidden sm:inline-flex items-center rounded-full border border-primary/15 bg-primary-fixed/30 px-2 py-1 text-[11px] font-semibold text-primary">
                   {activePlanName}
+                </span>
+              )}
+              {pendingPlanName && (
+                <span
+                  className="hidden lg:inline-flex items-center gap-1 rounded-full border border-tertiary/25 bg-tertiary-fixed/30 px-2 py-1 text-[11px] font-semibold text-tertiary"
+                  title={`${pendingPlanName} is waiting for the current plan to end`}
+                >
+                  <span className="material-symbols-outlined text-[13px]">schedule</span>
+                  {pendingPlanName} pending
                 </span>
               )}
               <div className="w-9 h-9 rounded-full bg-surface-variant overflow-hidden flex items-center justify-center text-secondary">

@@ -19,9 +19,11 @@ export interface SubscriptionPlan {
 
 export type SubscriptionPlanPayload = Omit<SubscriptionPlan, 'id' | 'active'>;
 
+export type SubscriptionStatus = 'ACTIVE' | 'PENDING' | 'EXPIRED' | 'CANCELLED';
+
 export interface UserSubscription {
   subscriptionId: number;
-  status: 'ACTIVE' | 'EXPIRED';
+  status: SubscriptionStatus;
   startDate: string;
   endDate: string;
   planName: string;
@@ -33,6 +35,10 @@ export interface UserSubscription {
   multipleDocuments: boolean;
   videoUpload: boolean;
   monthlyTokenLimit: number;
+  pendingSubscriptionId?: number | null;
+  pendingPlanName?: string | null;
+  pendingStartDate?: string | null;
+  pendingEndDate?: string | null;
 }
 
 export interface PaymentRevenue {
@@ -96,7 +102,7 @@ export const subscriptionService = {
   },
 
   async getMySubscription(): Promise<ApiResponse<BackendResponse<UserSubscription>>> {
-    // Backend resolves all active subscriptions and returns the single effective plan.
+    // Main fields describe the effective plan; pending* fields describe the queued downgrade.
     return apiClient.get<BackendResponse<UserSubscription>>('/subscriptions/me');
   },
 

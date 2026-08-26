@@ -5,9 +5,10 @@ import type { SubscriptionPlan, UserSubscription } from '../../services/subscrip
 interface SubscriptionModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSubscriptionChange?: (subscription: UserSubscription) => void;
 }
 
-export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose }) => {
+export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, onSubscriptionChange }) => {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [effectiveSubscription, setEffectiveSubscription] = useState<UserSubscription | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -37,6 +38,9 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
 
         if (subRes.data && subRes.data.success) {
           setEffectiveSubscription(subRes.data.data);
+          onSubscriptionChange?.(subRes.data.data);
+        } else {
+          setError((current) => current || subRes.error || 'Failed to load your current subscription.');
         }
       } catch (err) {
         console.error('Error fetching subscription data:', err);
@@ -47,7 +51,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
     };
 
     loadSubscriptionData();
-  }, [isOpen]);
+  }, [isOpen, onSubscriptionChange]);
 
   const handlePurchase = async (planId: number) => {
     setIsPurchasing(planId);
@@ -70,6 +74,14 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
   const formatPrice = (price: number) => {
     if (price === 0) return 'Free';
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+  };
+
+  const formatDate = (value?: string | null) => {
+    if (!value) return null;
+    const date = new Date(`${value}T00:00:00`);
+    return Number.isNaN(date.getTime())
+      ? value
+      : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   if (!isOpen) return null;
@@ -115,8 +127,13 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
             {plans.map((plan) => {
               const isEffective = effectiveSubscription?.status === 'ACTIVE'
                 && effectiveSubscription.planName.toLowerCase() === plan.name.toLowerCase();
+              const isPending = !!effectiveSubscription?.pendingPlanName
+                && effectiveSubscription.pendingPlanName.toLowerCase() === plan.name.toLowerCase();
               const isFree = plan.price === 0;
-              const isDisabled = isPurchasing !== null;
+              const isDisabled = isPurchasing !== null || isPending;
+              const pendingStartDate = isPending
+                ? formatDate(effectiveSubscription?.pendingStartDate)
+                : null;
 
               return (
                 <div 
@@ -124,12 +141,19 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
                   className={`relative flex flex-col bg-surface-container-low border rounded-2xl p-6 transition-all duration-300 hover:shadow-md hover:border-primary/50 group ${
                     isEffective
                       ? 'border-2 border-primary ring-4 ring-primary/10' 
+                      : isPending
+                        ? 'border-2 border-tertiary/50 ring-4 ring-tertiary/10'
                       : 'border-outline-variant'
                   }`}
                 >
                   {isEffective && (
                     <span className="absolute top-0 right-6 -translate-y-1/2 px-3 py-1 bg-primary text-on-primary font-label-md text-xs font-bold rounded-full shadow-sm">
-                      Effective Plan
+                      Current Plan
+                    </span>
+                  )}
+                  {isPending && (
+                    <span className="absolute top-0 right-6 -translate-y-1/2 px-3 py-1 bg-tertiary text-on-tertiary font-label-md text-xs font-bold rounded-full shadow-sm">
+                      Pending activation
                     </span>
                   )}
 
@@ -151,6 +175,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
                     {plan.description && (
                       <p className="text-secondary text-xs mt-2 min-h-[32px] line-clamp-2">
                         {plan.description}
+                      </p>
+                    )}
+                    {isPending && (
+                      <p className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-tertiary">
+                        <span className="material-symbols-outlined text-[16px]">schedule</span>
+                        {pendingStartDate ? `Starts ${pendingStartDate}` : 'Waiting for the current plan to end'}
                       </p>
                     )}
                   </div>
@@ -225,6 +255,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
                           <div className="w-4 h-4 border-2 border-on-primary/25 border-t-on-primary rounded-full animate-spin" />
                           <span>Connecting...</span>
                         </>
+                      ) : isPending ? (
+                        'Pending activation'
                       ) : isEffective ? (
                         'Buy Again'
                       ) : (

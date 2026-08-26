@@ -23,9 +23,11 @@ export const SmartChatView: React.FC = () => {
         } else {
           setError(documentsResponse.error || 'Could not load your documents.');
         }
-        if (subscriptionResponse.data?.success) {
+        if (subscriptionResponse.data?.success && subscriptionResponse.data.data.status === 'ACTIVE') {
           setCanChatMultiple(subscriptionResponse.data.data.multipleDocuments);
           setPlanName(subscriptionResponse.data.data.planName || 'Free');
+        } else {
+          setError(subscriptionResponse.error || 'No active subscription is available for Smart Chat.');
         }
       })
       .catch(() => setError('Could not prepare Smart Chat. Please try again.'))

@@ -1,6 +1,7 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import subscriptionService from '../services/subscriptionService';
+import type { UserSubscription } from '../services/subscriptionService';
 
 export const PaymentResultPage: React.FC = () => {
   const navigate = useNavigate();
@@ -10,32 +11,48 @@ export const PaymentResultPage: React.FC = () => {
   const [txnNo, setTxnNo] = useState<string | null>(null);
   const [amount, setAmount] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [subscription, setSubscription] = useState<UserSubscription | null>(null);
 
   useEffect(() => {
-    setErrorMsg(null);
+    let cancelled = false;
+    const loadResult = async () => {
+      setErrorMsg(null);
+      setSubscription(null);
 
-    const params = new URLSearchParams(location.search);
-    const status = params.get('status');
-    const transactionNo = params.get('transactionNo');
-    const message = params.get('message');
-    const amountVal = params.get('amount') || params.get('vnp_Amount');
+      const params = new URLSearchParams(location.search);
+      const status = params.get('status');
+      const transactionNo = params.get('transactionNo');
+      const message = params.get('message');
+      const amountVal = params.get('amount') || params.get('vnp_Amount');
 
-    if (amountVal) {
-      const rawAmount = parseFloat(amountVal);
-      // If amount contains the raw VNPay format (multiplied by 100), divide it.
-      const displayAmount = rawAmount > 5000000 ? rawAmount / 100 : rawAmount;
-      setAmount(new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(displayAmount));
-    }
+      if (amountVal) {
+        const rawAmount = parseFloat(amountVal);
+        // If amount contains the raw VNPay format (multiplied by 100), divide it.
+        const displayAmount = rawAmount > 5000000 ? rawAmount / 100 : rawAmount;
+        setAmount(new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(displayAmount));
+      }
 
-    if (status?.toUpperCase() === 'SUCCESS') {
-      setIsSuccess(true);
-      setTxnNo(transactionNo);
-    } else {
-      setIsSuccess(false);
-      setErrorMsg(message || 'Payment transaction failed or was canceled.');
-    }
+      if (status?.toUpperCase() === 'SUCCESS') {
+        setIsSuccess(true);
+        setTxnNo(transactionNo);
+        const subscriptionResponse = await subscriptionService.getMySubscription();
+        if (!cancelled && subscriptionResponse.data?.success) {
+          setSubscription(subscriptionResponse.data.data);
+        }
+      } else {
+        setIsSuccess(false);
+        setErrorMsg(message || 'Payment transaction failed or was canceled.');
+      }
 
-    setIsLoading(false);
+      if (!cancelled) setIsLoading(false);
+    };
+
+    loadResult().catch(() => {
+      if (!cancelled) setIsLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [location.search]);
 
   return (
@@ -61,7 +78,13 @@ export const PaymentResultPage: React.FC = () => {
 
             <div>
               <h2 className="font-title-lg text-title-lg font-bold text-on-surface">Payment Successful!</h2>
-              <p className="text-secondary text-sm mt-1">Thank you! Your premium subscription is now active.</p>
+              <p className="text-secondary text-sm mt-1">
+                {subscription?.pendingPlanName
+                  ? `${subscription.pendingPlanName} is pending activation. ${subscription.planName} remains active until the current period ends.`
+                  : subscription?.status === 'ACTIVE'
+                    ? `${subscription.planName} is now your current plan.`
+                    : 'Your payment was completed successfully.'}
+              </p>
             </div>
 
             {/* Receipt details */}
@@ -70,6 +93,18 @@ export const PaymentResultPage: React.FC = () => {
                 <span className="text-secondary font-medium">Status</span>
                 <span className="text-primary font-bold">SUCCESS</span>
               </div>
+              {subscription?.status === 'ACTIVE' && (
+                <div className="flex justify-between">
+                  <span className="text-secondary font-medium">Current plan</span>
+                  <span className="font-bold text-on-surface">{subscription.planName}</span>
+                </div>
+              )}
+              {subscription?.pendingPlanName && (
+                <div className="flex justify-between gap-4">
+                  <span className="text-secondary font-medium">Pending plan</span>
+                  <span className="text-right font-bold text-tertiary">{subscription.pendingPlanName}</span>
+                </div>
+              )}
               {amount && (
                 <div className="flex justify-between">
                   <span className="text-secondary font-medium">Amount Paid</span>
