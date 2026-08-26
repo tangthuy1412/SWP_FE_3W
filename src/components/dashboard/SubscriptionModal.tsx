@@ -54,6 +54,16 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
   }, [isOpen, onSubscriptionChange]);
 
   const handlePurchase = async (planId: number) => {
+    // Keep the purchase guard here as well as on the button so an active plan
+    // cannot be purchased again if the subscription state changes while the
+    // modal is open.
+    const selectedPlan = plans.find((plan) => plan.id === planId);
+    const isCurrentPlan = selectedPlan
+      && effectiveSubscription?.status === 'ACTIVE'
+      && effectiveSubscription.planName.trim().toLowerCase() === selectedPlan.name.trim().toLowerCase();
+
+    if (isCurrentPlan) return;
+
     setIsPurchasing(planId);
     try {
       const response = await subscriptionService.purchasePlan(planId);
@@ -130,7 +140,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
               const isPending = !!effectiveSubscription?.pendingPlanName
                 && effectiveSubscription.pendingPlanName.toLowerCase() === plan.name.toLowerCase();
               const isFree = plan.price === 0;
-              const isDisabled = isPurchasing !== null || isPending;
+              const isDisabled = isPurchasing !== null || isPending || isEffective;
               const pendingStartDate = isPending
                 ? formatDate(effectiveSubscription?.pendingStartDate)
                 : null;
@@ -258,7 +268,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
                       ) : isPending ? (
                         'Pending activation'
                       ) : isEffective ? (
-                        'Buy Again'
+                        'Current Plan'
                       ) : (
                         'Buy Plan'
                       )}
